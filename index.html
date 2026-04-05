@@ -1,0 +1,291 @@
+<!DOCTYPE html>
+<html lang="sv">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+    <title>Kamelkaravanen</title>
+    <style>
+        :root {
+            --desert-sand: #f4a460;
+            --desert-dark: #8b4513;
+            --text-color: #3e2723;
+            --bg-color: #ffdead;
+        }
+
+        body, html {
+            margin: 0;
+            padding: 0;
+            background-color: var(--bg-color);
+            color: var(--text-color);
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            height: 100vh;
+            touch-action: none; /* Förhindrar zoom/scroll på mobil */
+        }
+
+        .header {
+            text-align: center;
+            margin: 15px 0;
+        }
+
+        h1 {
+            margin: 0;
+            font-size: 1.8rem;
+            color: var(--desert-dark);
+        }
+
+        #scoreBoard {
+            font-size: 1.2rem;
+            font-weight: bold;
+            margin-top: 5px;
+        }
+
+        canvas {
+            background-color: var(--desert-sand);
+            border: 4px solid var(--desert-dark);
+            border-radius: 8px;
+            box-shadow: 0 10px 20px rgba(0,0,0,0.2);
+            max-width: 95vw;
+            max-height: 50vh;
+        }
+
+        /* Styrkors för mobil */
+        .controls {
+            display: grid;
+            grid-template-columns: 60px 60px 60px;
+            grid-template-rows: 60px 60px 60px;
+            gap: 10px;
+            margin-top: 20px;
+        }
+
+        .btn {
+            background-color: var(--desert-dark);
+            color: white;
+            border: none;
+            border-radius: 10px;
+            font-size: 1.5rem;
+            cursor: pointer;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            box-shadow: 0 4px 0 #5c2e0b;
+        }
+
+        .btn:active {
+            transform: translateY(4px);
+            box-shadow: none;
+        }
+
+        #upBtn { grid-column: 2; grid-row: 1; }
+        #leftBtn { grid-column: 1; grid-row: 2; }
+        #rightBtn { grid-column: 3; grid-row: 2; }
+        #downBtn { grid-column: 2; grid-row: 3; }
+
+        .overlay {
+            position: absolute;
+            top: 0; left: 0; right: 0; bottom: 0;
+            background: rgba(255, 222, 173, 0.8);
+            display: flex;
+            flex-direction: column;
+            justify-content: center;
+            align-items: center;
+            z-index: 10;
+        }
+
+        .hidden {
+            display: none !important;
+        }
+
+        .restart-btn {
+            background: var(--desert-dark);
+            color: white;
+            padding: 15px 30px;
+            font-size: 1.2rem;
+            border: none;
+            border-radius: 10px;
+            margin-top: 20px;
+            cursor: pointer;
+            font-weight: bold;
+        }
+    </style>
+</head>
+<body>
+
+<div class="header">
+    <h1>Kamelkaravanen 🐫</h1>
+    <div id="scoreBoard">Längd: 1</div>
+</div>
+
+<canvas id="gameCanvas" width="300" height="300"></canvas>
+
+<div class="controls">
+    <button class="btn" id="upBtn">⬆️</button>
+    <button class="btn" id="leftBtn">⬅️</button>
+    <button class="btn" id="rightBtn">➡️</button>
+    <button class="btn" id="downBtn">⬇️</button>
+</div>
+
+<div id="gameOverScreen" class="overlay hidden">
+    <h1 style="color: #d32f2f; font-size: 2.5rem;">Krock!</h1>
+    <p style="font-size: 1.2rem; font-weight: bold;">Karavanen trasslade ihop sig.</p>
+    <button class="restart-btn" onclick="resetGame()">Börja om</button>
+</div>
+
+<script>
+    const canvas = document.getElementById("gameCanvas");
+    const ctx = canvas.getContext("2d");
+    const scoreBoard = document.getElementById("scoreBoard");
+    const gameOverScreen = document.getElementById("gameOverScreen");
+
+    // Inställningar
+    const boxSize = 25; // Storlek på varje rutnät
+    const canvasSize = 300;
+    const totalBoxes = canvasSize / boxSize;
+    
+    let snake = [];
+    let food = {};
+    let direction = "RIGHT";
+    let nextDirection = "RIGHT"; // Förhindrar att man svänger in i sig själv snabbt
+    let gameInterval;
+    let score = 1;
+
+    // Starta spelet
+    function initGame() {
+        // Skapa första kamelen (huvudet) i mitten
+        snake = [
+            { x: 6 * boxSize, y: 6 * boxSize }
+        ];
+        
+        score = 1;
+        direction = "RIGHT";
+        nextDirection = "RIGHT";
+        scoreBoard.innerText = "Längd: " + score;
+        gameOverScreen.classList.add("hidden");
+        
+        spawnFood();
+        
+        // Uppdatera spelet var 150:e millisekund
+        clearInterval(gameInterval);
+        gameInterval = setInterval(drawGame, 150);
+    }
+
+    // Slumpa fram en ny kamel att samla in
+    function spawnFood() {
+        food = {
+            x: Math.floor(Math.random() * totalBoxes) * boxSize,
+            y: Math.floor(Math.random() * totalBoxes) * boxSize
+        };
+        // Kolla så kamelen inte hamnar inuti karavanen
+        for (let i = 0; i < snake.length; i++) {
+            if (food.x === snake[i].x && food.y === snake[i].y) {
+                spawnFood();
+                break;
+            }
+        }
+    }
+
+    // Rita allt på skärmen
+    function drawGame() {
+        direction = nextDirection; // Uppdatera riktningen
+        
+        // Rita öknen (rensa bakgrunden)
+        ctx.fillStyle = "#f4a460";
+        ctx.fillRect(0, 0, canvas.width, canvas.height);
+
+        // Rita "maten" (den ensamma kamelen)
+        ctx.font = "20px Arial";
+        ctx.textBaseline = "top";
+        ctx.fillText("🐪", food.x + 2, food.y + 2);
+
+        // Rita karavanen
+        for (let i = 0; i < snake.length; i++) {
+            let isHead = (i === 0);
+            // Huvudet är en tvåpucklig kamel, kroppen är enpucklig (för effektens skull!)
+            let camelEmoji = isHead ? "🐫" : "🐪"; 
+            ctx.fillText(camelEmoji, snake[i].x + 2, snake[i].y + 2);
+        }
+
+        // Räkna ut nästa position för huvudet
+        let headX = snake[0].x;
+        let headY = snake[0].y;
+
+        if (direction === "LEFT") headX -= boxSize;
+        if (direction === "UP") headY -= boxSize;
+        if (direction === "RIGHT") headX += boxSize;
+        if (direction === "DOWN") headY += boxSize;
+
+        // Kolla om vi krockar med väggarna
+        if (headX < 0 || headX >= canvasSize || headY < 0 || headY >= canvasSize) {
+            return gameOver();
+        }
+
+        // Kolla om vi krockar med oss själva (karavanen biter fel svans)
+        for (let i = 0; i < snake.length; i++) {
+            if (headX === snake[i].x && headY === snake[i].y) {
+                return gameOver();
+            }
+        }
+
+        // Skapa det nya huvudet
+        let newHead = { x: headX, y: headY };
+
+        // Kolla om vi "äter" en kamel
+        if (headX === food.x && headY === food.y) {
+            score++;
+            scoreBoard.innerText = "Längd: " + score;
+            spawnFood();
+            // Vi tar inte bort svansen, vilket gör karavanen längre
+        } else {
+            // Om vi inte åt, ta bort sista svansbiten så den bara flyttar sig
+            snake.pop();
+        }
+
+        // Lägg till nya huvudet längst fram
+        snake.unshift(newHead);
+    }
+
+    function gameOver() {
+        clearInterval(gameInterval);
+        gameOverScreen.classList.remove("hidden");
+    }
+
+    function resetGame() {
+        initGame();
+    }
+
+    // --- KONTROLLER ---
+
+    function changeDirection(newDir) {
+        if (newDir === "LEFT" && direction !== "RIGHT") nextDirection = "LEFT";
+        if (newDir === "UP" && direction !== "DOWN") nextDirection = "UP";
+        if (newDir === "RIGHT" && direction !== "LEFT") nextDirection = "RIGHT";
+        if (newDir === "DOWN" && direction !== "UP") nextDirection = "DOWN";
+    }
+
+    // Tangentbord
+    document.addEventListener("keydown", (event) => {
+        if (event.key === "ArrowLeft") changeDirection("LEFT");
+        if (event.key === "ArrowUp") changeDirection("UP");
+        if (event.key === "ArrowRight") changeDirection("RIGHT");
+        if (event.key === "ArrowDown") changeDirection("DOWN");
+    });
+
+    // Mobilknappar
+    document.getElementById("leftBtn").addEventListener("touchstart", (e) => { e.preventDefault(); changeDirection("LEFT"); });
+    document.getElementById("upBtn").addEventListener("touchstart", (e) => { e.preventDefault(); changeDirection("UP"); });
+    document.getElementById("rightBtn").addEventListener("touchstart", (e) => { e.preventDefault(); changeDirection("RIGHT"); });
+    document.getElementById("downBtn").addEventListener("touchstart", (e) => { e.preventDefault(); changeDirection("DOWN"); });
+    
+    // Fallback för musklick på mobilknapparna i webbläsare
+    document.getElementById("leftBtn").addEventListener("mousedown", () => changeDirection("LEFT"));
+    document.getElementById("upBtn").addEventListener("mousedown", () => changeDirection("UP"));
+    document.getElementById("rightBtn").addEventListener("mousedown", () => changeDirection("RIGHT"));
+    document.getElementById("downBtn").addEventListener("mousedown", () => changeDirection("DOWN"));
+
+    // Starta direkt
+    initGame();
+</script>
+</body>
+</html>
