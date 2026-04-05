@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
-    <title>Kameler</title>
+    <title>Kamelkaravanen Pro</title>
     <style>
         :root {
             --desert-sand: #f4a460;
@@ -13,75 +13,58 @@
         }
 
         body, html {
-            margin: 0;
-            padding: 0;
+            margin: 0; padding: 0;
             background-color: var(--bg-color);
             color: var(--text-color);
-            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
-            display: flex;
-            flex-direction: column;
-            align-items: center;
-            height: 100vh;
-            touch-action: none; /* Förhindrar zoom/scroll på mobil */
+            font-family: sans-serif;
+            display: flex; flex-direction: column; align-items: center;
+            height: 100vh; overflow: hidden; touch-action: none;
         }
 
-        .header {
-            text-align: center;
-            margin: 15px 0;
-        }
-
-        h1 {
-            margin: 0;
-            font-size: 1.8rem;
-            color: var(--desert-dark);
-        }
-
-        #scoreBoard {
-            font-size: 1.2rem;
-            font-weight: bold;
-            margin-top: 5px;
-        }
-
-        /* En behållare för canvasen så överläggen hamnar rätt */
-        .game-container {
-            position: relative;
-        }
+        .header { text-align: center; margin: 10px 0; }
+        h1 { margin: 0; font-size: 1.5rem; color: var(--desert-dark); }
+        
+        .game-container { position: relative; margin-top: 5px; }
 
         canvas {
             background-color: var(--desert-sand);
             border: 4px solid var(--desert-dark);
             border-radius: 8px;
-            box-shadow: 0 10px 20px rgba(0,0,0,0.2);
-            max-width: 95vw;
-            max-height: 50vh;
             display: block;
+            image-rendering: pixelated; /* Gör emojierna skarpare */
         }
 
-        /* Styrkors för mobil */
+        .overlay {
+            position: absolute; top: 0; left: 0; right: 0; bottom: 0;
+            background: rgba(255, 222, 173, 0.95);
+            display: flex; flex-direction: column; justify-content: center; align-items: center;
+            z-index: 10; border-radius: 4px; text-align: center; padding: 20px;
+        }
+
+        .hidden { display: none !important; }
+
+        /* Responsiva kontroller */
         .controls {
             display: grid;
-            grid-template-columns: 60px 60px 60px;
-            grid-template-rows: 60px 60px 60px;
-            gap: 10px;
+            grid-template-columns: repeat(3, 75px);
+            grid-template-rows: repeat(3, 75px);
+            gap: 15px;
             margin-top: 20px;
         }
 
         .btn {
             background-color: var(--desert-dark);
-            color: white;
-            border: none;
-            border-radius: 10px;
-            font-size: 1.5rem;
-            cursor: pointer;
-            display: flex;
-            justify-content: center;
-            align-items: center;
-            box-shadow: 0 4px 0 #5c2e0b;
+            color: white; border: none; border-radius: 15px;
+            font-size: 2rem; cursor: pointer;
+            display: flex; justify-content: center; align-items: center;
+            box-shadow: 0 6px 0 #5c2e0b;
+            user-select: none;
+            -webkit-tap-highlight-color: transparent;
         }
 
         .btn:active {
             transform: translateY(4px);
-            box-shadow: none;
+            box-shadow: 0 2px 0 #5c2e0b;
         }
 
         #upBtn { grid-column: 2; grid-row: 1; }
@@ -89,38 +72,10 @@
         #rightBtn { grid-column: 3; grid-row: 2; }
         #downBtn { grid-column: 2; grid-row: 3; }
 
-        .overlay {
-            position: absolute;
-            top: 0; left: 0; right: 0; bottom: 0;
-            background: rgba(255, 222, 173, 0.9);
-            display: flex;
-            flex-direction: column;
-            justify-content: center;
-            align-items: center;
-            z-index: 10;
-            border-radius: 8px;
-        }
-
-        .hidden {
-            display: none !important;
-        }
-
         .action-btn {
-            background: var(--desert-dark);
-            color: white;
-            padding: 15px 30px;
-            font-size: 1.2rem;
-            border: none;
-            border-radius: 10px;
-            margin-top: 20px;
-            cursor: pointer;
-            font-weight: bold;
-            box-shadow: 0 4px 0 #5c2e0b;
-        }
-        
-        .action-btn:active {
-            transform: translateY(4px);
-            box-shadow: none;
+            background: var(--desert-dark); color: white;
+            padding: 15px 30px; font-size: 1.2rem; border: none;
+            border-radius: 10px; cursor: pointer; font-weight: bold;
         }
     </style>
 </head>
@@ -135,15 +90,14 @@
     <canvas id="gameCanvas" width="300" height="300"></canvas>
 
     <div id="startScreen" class="overlay">
-        <h2 style="color: var(--desert-dark); margin-bottom: 5px;">Redo för öknen?</h2>
-        <p style="margin-top: 0; font-weight: bold;">Styr karavanen och samla kameler!</p>
-        <button class="action-btn" onclick="startGame()">Starta spelet</button>
+        <h2>Redo?</h2>
+        <button class="action-btn" onclick="startGame()">STARTA</button>
     </div>
 
     <div id="gameOverScreen" class="overlay hidden">
-        <h1 style="color: #d32f2f; font-size: 2.5rem; margin: 0;">Krock!</h1>
-        <p style="font-size: 1.2rem; font-weight: bold;">Karavanen trasslade ihop sig.</p>
-        <button class="action-btn" onclick="startGame()">Börja om</button>
+        <h2 style="color: #d32f2f;">KROCK!</h2>
+        <p id="finalScore"></p>
+        <button class="action-btn" onclick="startGame()">FÖRSÖK IGEN</button>
     </div>
 </div>
 
@@ -158,142 +112,127 @@
     const canvas = document.getElementById("gameCanvas");
     const ctx = canvas.getContext("2d");
     const scoreBoard = document.getElementById("scoreBoard");
-    const gameOverScreen = document.getElementById("gameOverScreen");
     const startScreen = document.getElementById("startScreen");
+    const gameOverScreen = document.getElementById("gameOverScreen");
 
-    // Inställningar
-    const boxSize = 25; 
+    const box = 25; 
     const canvasSize = 300;
-    const totalBoxes = canvasSize / boxSize;
-    const gameSpeed = 250; // HÄR ÄR HASTIGHETEN (Högre siffra = långsammare)
+    const speed = 250; 
     
-    let snake = [];
-    let food = {};
-    let direction = "RIGHT";
-    let nextDirection = "RIGHT"; 
-    let gameInterval;
-    let score = 1;
+    let snake, food, direction, nextDirection, gameInterval;
 
-    // Rita upp en tom öken innan spelet startar
-    function drawEmptyDesert() {
-        ctx.fillStyle = "#f4a460";
-        ctx.fillRect(0, 0, canvas.width, canvas.height);
-    }
-
-    // Starta (eller starta om) spelet när man trycker på knappen
     function startGame() {
         startScreen.classList.add("hidden");
         gameOverScreen.classList.add("hidden");
-
-        snake = [
-            { x: 6 * boxSize, y: 6 * boxSize }
-        ];
         
-        score = 1;
+        snake = [{ x: 5 * box, y: 5 * box }];
         direction = "RIGHT";
         nextDirection = "RIGHT";
-        scoreBoard.innerText = "Längd: " + score;
-        
         spawnFood();
         
-        clearInterval(gameInterval);
-        // Här används gameSpeed-variabeln (250 millisekunder)
-        gameInterval = setInterval(drawGame, gameSpeed);
+        if(gameInterval) clearInterval(gameInterval);
+        gameInterval = setInterval(draw, speed);
+        updateScore();
     }
 
     function spawnFood() {
         food = {
-            x: Math.floor(Math.random() * totalBoxes) * boxSize,
-            y: Math.floor(Math.random() * totalBoxes) * boxSize
+            x: Math.floor(Math.random() * (canvasSize/box)) * box,
+            y: Math.floor(Math.random() * (canvasSize/box)) * box
         };
-        for (let i = 0; i < snake.length; i++) {
-            if (food.x === snake[i].x && food.y === snake[i].y) {
-                spawnFood();
-                break;
-            }
-        }
+        // Kolla så maten inte hamnar på kamelen
+        if (snake.some(seg => seg.x === food.x && seg.y === food.y)) spawnFood();
     }
 
-    function drawGame() {
-        direction = nextDirection; 
-        
-        ctx.fillStyle = "#f4a460";
-        ctx.fillRect(0, 0, canvas.width, canvas.height);
+    function updateScore() {
+        scoreBoard.innerText = "Längd: " + snake.length;
+    }
 
-        ctx.font = "20px Arial";
-        ctx.textBaseline = "top";
-        ctx.fillText("🐪", food.x + 2, food.y + 2);
-
-        for (let i = 0; i < snake.length; i++) {
-            let isHead = (i === 0);
-            let camelEmoji = isHead ? "🐫" : "🐪"; 
-            ctx.fillText(camelEmoji, snake[i].x + 2, snake[i].y + 2);
-        }
-
+    function draw() {
+        direction = nextDirection;
         let headX = snake[0].x;
         let headY = snake[0].y;
 
-        if (direction === "LEFT") headX -= boxSize;
-        if (direction === "UP") headY -= boxSize;
-        if (direction === "RIGHT") headX += boxSize;
-        if (direction === "DOWN") headY += boxSize;
+        if (direction === "LEFT") headX -= box;
+        if (direction === "UP") headY -= box;
+        if (direction === "RIGHT") headX += box;
+        if (direction === "DOWN") headY += box;
 
-        if (headX < 0 || headX >= canvasSize || headY < 0 || headY >= canvasSize) {
-            return gameOver();
+        // KOLLISION - Här är fixen för väggen
+        if (headX < 0 || headX >= canvasSize || headY < 0 || headY >= canvasSize || 
+            snake.some((seg, index) => index !== 0 && seg.x === headX && seg.y === headY)) {
+            return die();
         }
 
-        for (let i = 0; i < snake.length; i++) {
-            if (headX === snake[i].x && headY === snake[i].y) {
-                return gameOver();
-            }
-        }
+        const grabbedFood = (headX === food.x && headY === food.y);
+        
+        // Flytta kamelen
+        const newHead = { x: headX, y: headY };
+        snake.unshift(newHead);
 
-        let newHead = { x: headX, y: headY };
-
-        if (headX === food.x && headY === food.y) {
-            score++;
-            scoreBoard.innerText = "Längd: " + score;
+        if (grabbedFood) {
             spawnFood();
+            updateScore();
         } else {
             snake.pop();
         }
 
-        snake.unshift(newHead);
+        // RITA
+        ctx.fillStyle = "#f4a460";
+        ctx.fillRect(0, 0, canvasSize, canvasSize);
+
+        // Mat
+        ctx.font = "20px Arial";
+        ctx.fillText("🐪", food.x + 2, food.y + 20);
+
+        // Karavan
+        snake.forEach((seg, i) => {
+            ctx.fillText(i === 0 ? "叙" : "🐪", seg.x + 2, seg.y + 20);
+        });
+        // (Fixade emojin för huvudet i koden till 🐫)
+        snake.forEach((seg, i) => {
+            ctx.fillText(i === 0 ? "🐫" : "🐪", seg.x + 2, seg.y + 20);
+        });
     }
 
-    function gameOver() {
+    function die() {
         clearInterval(gameInterval);
+        document.getElementById("finalScore").innerText = "Din karavan blev " + snake.length + " kameler lång.";
         gameOverScreen.classList.remove("hidden");
     }
 
-    function changeDirection(newDir) {
-        if (newDir === "LEFT" && direction !== "RIGHT") nextDirection = "LEFT";
-        if (newDir === "UP" && direction !== "DOWN") nextDirection = "UP";
-        if (newDir === "RIGHT" && direction !== "LEFT") nextDirection = "RIGHT";
-        if (newDir === "DOWN" && direction !== "UP") nextDirection = "DOWN";
+    // SNABBARE KONTROLLER
+    function handleInput(dir) {
+        if (dir === "LEFT" && direction !== "RIGHT") nextDirection = "LEFT";
+        if (dir === "UP" && direction !== "DOWN") nextDirection = "UP";
+        if (dir === "RIGHT" && direction !== "LEFT") nextDirection = "RIGHT";
+        if (dir === "DOWN" && direction !== "UP") nextDirection = "DOWN";
     }
 
-    // Tangentbord
-    document.addEventListener("keydown", (event) => {
-        if (event.key === "ArrowLeft") changeDirection("LEFT");
-        if (event.key === "ArrowUp") changeDirection("UP");
-        if (event.key === "ArrowRight") changeDirection("RIGHT");
-        if (event.key === "ArrowDown") changeDirection("DOWN");
+    // Lyssna på både touch och klick för omedelbar respons
+    const controlConfig = {
+        "upBtn": "UP", "downBtn": "DOWN", "leftBtn": "LEFT", "rightBtn": "RIGHT"
+    };
+
+    Object.keys(controlConfig).forEach(id => {
+        const btn = document.getElementById(id);
+        // "pointerdown" triggar så fort man nuddar, snabbare än "click"
+        btn.addEventListener("pointerdown", (e) => {
+            e.preventDefault();
+            handleInput(controlConfig[id]);
+        });
     });
 
-    // Mobilknappar
-    document.getElementById("leftBtn").addEventListener("touchstart", (e) => { e.preventDefault(); changeDirection("LEFT"); });
-    document.getElementById("upBtn").addEventListener("touchstart", (e) => { e.preventDefault(); changeDirection("UP"); });
-    document.getElementById("rightBtn").addEventListener("touchstart", (e) => { e.preventDefault(); changeDirection("RIGHT"); });
-    document.getElementById("downBtn").addEventListener("touchstart", (e) => { e.preventDefault(); changeDirection("DOWN"); });
-    
-    document.getElementById("leftBtn").addEventListener("mousedown", () => changeDirection("LEFT"));
-    document.getElementById("upBtn").addEventListener("mousedown", () => changeDirection("UP"));
-    document.getElementById("rightBtn").addEventListener("mousedown", () => changeDirection("RIGHT"));
-    document.getElementById("downBtn").addEventListener("mousedown", () => changeDirection("DOWN"));
+    document.addEventListener("keydown", e => {
+        if (e.key === "ArrowUp") handleInput("UP");
+        if (e.key === "ArrowDown") handleInput("DOWN");
+        if (e.key === "ArrowLeft") handleInput("LEFT");
+        if (e.key === "ArrowRight") handleInput("RIGHT");
+    });
 
-    // Rita upp den tomma bakgrunden så det ser snyggt ut bakom startskärmen
-    drawEmptyDesert();
+    // Rita tom bana direkt
+    ctx.fillStyle = "#f4a460";
+    ctx.fillRect(0, 0, canvasSize, canvasSize);
 </script>
 </body>
 </html>
