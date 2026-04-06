@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
-    <title>Kamelkaravanen Turbo</title>
+    <title>Kamelkaravanen Custom Graphics</title>
     <style>
         :root {
             --desert-sand: #f4a460;
@@ -46,6 +46,7 @@
             border-radius: 8px;
             display: block;
             touch-action: none;
+            image-rendering: pixelated; /* Behåller skarpa kanter om dina ikoner är pixelart */
         }
 
         .overlay {
@@ -100,7 +101,7 @@
 <body>
 
 <div class="header">
-    <h1>Kamelkaravanen Turbo 🐫</h1>
+    <h1>Kamelkaravanen 🐫</h1>
     <div class="score-board">
         <div id="score1" class="p1-score">P1: 1</div>
         <div id="score2" class="p2-score hidden">P2: 1</div>
@@ -145,10 +146,52 @@
     const speedSlider = document.getElementById("speedSlider");
     const speedValue = document.getElementById("speedValue");
 
-    const box = 20;
+    const box = 20; // Storlek på rutorna (dina bilder skalas automatiskt till 20x20)
     const canvasSize = 300;
-    let mode, gameInterval, food;
     
+    // --- BILD-INSTÄLLNINGAR ---
+    // Ändra filnamnen här så att de stämmer med bilderna i ditt GitHub-repo.
+    // Tips: Använd transparenta PNG-bilder!
+    
+    function laddaBild(src) {
+        let img = new Image();
+        img.src = src;
+        return img;
+    }
+
+    const grafik = {
+        p1: {
+            head: {
+                UP: laddaBild("p1-head-up.png"),
+                DOWN: laddaBild("p1-head-down.png"),
+                LEFT: laddaBild("p1-head-left.png"),
+                RIGHT: laddaBild("p1-head-right.png")
+            },
+            body: {
+                UP: laddaBild("p1-body-up.png"),
+                DOWN: laddaBild("p1-body-down.png"),
+                LEFT: laddaBild("p1-body-left.png"),
+                RIGHT: laddaBild("p1-body-right.png")
+            }
+        },
+        p2: {
+            head: {
+                UP: laddaBild("p2-head-up.png"),
+                DOWN: laddaBild("p2-head-down.png"),
+                LEFT: laddaBild("p2-head-left.png"),
+                RIGHT: laddaBild("p2-head-right.png")
+            },
+            body: {
+                UP: laddaBild("p2-body-up.png"),
+                DOWN: laddaBild("p2-body-down.png"),
+                LEFT: laddaBild("p2-body-left.png"),
+                RIGHT: laddaBild("p2-body-right.png")
+            }
+        }
+    };
+    // -------------------------
+
+    let mode, gameInterval, food;
     let p1Queue = [];
     let p2Queue = [];
     
@@ -222,13 +265,13 @@
         ctx.fillStyle = "#f4a460";
         ctx.fillRect(0, 0, canvasSize, canvasSize);
         
-        // Rita maten
+        // Rita maten (Emoji tills vidare, byt ut mot ctx.drawImage om du vill ha egen mat-ikon)
         ctx.font = "18px Arial";
-        ctx.fillText("🐪", food.x - 1, food.y + 16);
+        ctx.fillText("🌴", food.x + 1, food.y + 16); 
         
-        // Rita kamelerna (utan färgade rutor)
-        drawSnake(snake1);
-        if(mode === 'multi') drawSnake(snake2);
+        // Rita kamelerna
+        if (p1Alive || mode === 'single') drawSnake(snake1, dir1, grafik.p1, 1);
+        if (mode === 'multi' && p2Alive) drawSnake(snake2, dir2, grafik.p2, 2);
     }
 
     function moveSnake(s, d, alive, playerNum) {
@@ -272,10 +315,33 @@
         return true;
     }
 
-    function drawSnake(s) {
+    // --- HÄR ÄR LOGIKEN FÖR RÄTT BILD ---
+    function drawSnake(s, currentDir, playerGrafik, playerNum) {
         s.forEach((seg, i) => {
-            ctx.font = "18px Arial";
-            ctx.fillText(i === 0 ? "🐫" : "🐪", seg.x - 1, seg.y + 16);
+            let segDir = currentDir;
+            let imgToDraw;
+
+            if (i === 0) {
+                // Huvudet tittar alltid i den riktning spelaren är på väg
+                imgToDraw = playerGrafik.head[currentDir];
+            } else {
+                // För kroppsdelarna: räkna ut var föregående del är och peka dit
+                let prevSeg = s[i - 1];
+                if (prevSeg.x > seg.x) segDir = "RIGHT";
+                else if (prevSeg.x < seg.x) segDir = "LEFT";
+                else if (prevSeg.y > seg.y) segDir = "DOWN";
+                else if (prevSeg.y < seg.y) segDir = "UP";
+                
+                imgToDraw = playerGrafik.body[segDir];
+            }
+
+            // Rita bilden om den är laddad, annars rita en tillfällig färgad fyrkant
+            if (imgToDraw.complete && imgToDraw.naturalHeight !== 0) {
+                ctx.drawImage(imgToDraw, seg.x, seg.y, box, box);
+            } else {
+                ctx.fillStyle = playerNum === 1 ? "#2563eb" : "#dc2626";
+                ctx.fillRect(seg.x, seg.y, box, box);
+            }
         });
     }
 
@@ -305,14 +371,12 @@
     document.addEventListener("keydown", e => {
         const k = e.key.toLowerCase();
         
-        // I enspelarläget funkar både pilar och WASD för bekvämlighet
         if (mode === 'single') {
             if(k === 'arrowup' || k === 'w') press(1, "UP"); 
             if(k === 'arrowdown' || k === 's') press(1, "DOWN");
             if(k === 'arrowleft' || k === 'a') press(1, "LEFT"); 
             if(k === 'arrowright' || k === 'd') press(1, "RIGHT");
         } else {
-            // I multiplayer får P1 pilarna och P2 får WASD
             if(k === 'arrowup') press(1, "UP"); 
             if(k === 'arrowdown') press(1, "DOWN");
             if(k === 'arrowleft') press(1, "LEFT"); 
