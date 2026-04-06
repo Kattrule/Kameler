@@ -3,359 +3,230 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
-    <title>Kamelkaravanen Lager-grafik</title>
+    <title>Kamelkaravanen - Alla har huvuden</title>
     <style>
         :root {
             --grass-green: #2e7d32; 
             --desert-dark: #1b5e20;
-            --text-color: #ffffff;
             --bg-color: #1b3022;
-            --p1-color: #4fc3f7;
-            --p2-color: #ff8a65;
         }
 
         body, html {
             margin: 0; padding: 0;
             background-color: var(--bg-color);
-            color: var(--text-color);
+            color: white;
             font-family: sans-serif;
             display: flex; flex-direction: column; align-items: center;
-            height: 100vh; overflow: hidden; 
-            touch-action: none; 
+            min-height: 100vh; touch-action: none; 
         }
 
-        .header { text-align: center; margin: 5px 0; }
-        h1 { margin: 0; font-size: 1.2rem; color: #a5d6a7; }
-        
-        .score-board { display: flex; justify-content: center; gap: 20px; font-size: 1rem; font-weight: bold; }
-        .p1-score { color: var(--p1-color); }
-        .p2-score { color: var(--p2-color); }
-
-        .game-layout {
-            display: flex; flex-direction: row; align-items: center; justify-content: center;
-            gap: 10px; width: 100%; max-width: 950px;
+        .menu-area {
+            background: rgba(0,0,0,0.5);
+            padding: 15px; border-radius: 10px; margin: 5px;
+            display: flex; flex-wrap: wrap; justify-content: center; gap: 10px;
+            z-index: 20;
         }
 
         canvas {
             background-color: var(--grass-green);
             border: 4px solid var(--desert-dark);
-            border-radius: 8px;
-            display: block;
-            touch-action: none;
-            image-rendering: pixelated; 
+            image-rendering: pixelated;
+            max-width: 95vw; max-height: 50vh;
         }
 
-        .overlay {
-            position: absolute; top: 0; left: 0; right: 0; bottom: 0;
-            background: rgba(27, 48, 34, 0.95);
-            display: flex; flex-direction: column; justify-content: center; align-items: center;
-            z-index: 10; text-align: center;
+        /* MOBILKNAPPAR - Fixad placering */
+        .controls-container {
+            display: flex; flex-direction: row; justify-content: center; 
+            gap: 40px; width: 100%; padding: 10px;
         }
 
-        .hidden { display: none !important; }
-
-        .controls { display: grid; grid-template-columns: repeat(3, 65px); grid-template-rows: repeat(3, 65px); gap: 8px; }
+        .controls {
+            display: grid; grid-template-columns: repeat(3, 60px); grid-template-rows: repeat(2, 60px); gap: 10px;
+        }
 
         .btn {
-            color: white; border: none; border-radius: 12px; font-size: 1.5rem; cursor: pointer;
-            display: flex; justify-content: center; align-items: center;
-            -webkit-tap-highlight-color: transparent;
+            background: #444; color: white; border: none; border-radius: 12px;
+            font-size: 1.5rem; display: flex; align-items: center; justify-content: center;
+            box-shadow: 0 5px 0 #222; touch-action: none;
         }
+        .btn:active { transform: translateY(3px); box-shadow: 0 2px 0 #000; }
+        
+        .up { grid-column: 2; grid-row: 1; }
+        .left { grid-column: 1; grid-row: 2; }
+        .down { grid-column: 2; grid-row: 2; }
+        .right { grid-column: 3; grid-row: 2; }
 
-        .p1-btn { background: #0288d1; box-shadow: 0 4px 0 #01579b; }
-        .p2-btn { background: #f4511e; box-shadow: 0 4px 0 #bf360c; }
-        .btn:active { transform: translateY(2px); box-shadow: 0 1px 0 #000; }
-
-        .action-btn { background: #4caf50; color: white; padding: 15px 30px; border-radius: 25px; font-weight: bold; border: none; cursor: pointer; }
-
-        @media (max-width: 800px) {
-            .game-layout { flex-direction: column; }
-            .controls { grid-template-columns: repeat(3, 55px); grid-template-rows: repeat(3, 55px); }
-        }
+        .hidden { display: none !important; }
+        .overlay { position: absolute; top: 20%; background: rgba(0,0,0,0.9); padding: 30px; border-radius: 20px; text-align: center; z-index: 100; }
     </style>
 </head>
 <body>
 
-<div class="header">
-    <h1>Kamelkaravanen 🐫</h1>
-    <div class="score-board">
-        <div id="score1" class="p1-score">P1: 1</div>
-        <div id="score2" class="p2-score hidden">P2: 1</div>
+<div class="menu-area" id="menu">
+    <div style="display:flex; flex-direction:column; align-items:center;">
+        <label>Bredd på banan (rutor):</label>
+        <input type="number" id="gridInput" value="20" style="width:80px; font-size:1.2rem; text-align:center;">
+    </div>
+    <button onclick="startGame('single')" style="padding:10px 20px;">STARTA SPEL</button>
+</div>
+
+<div style="position: relative; display: flex; justify-content: center;">
+    <canvas id="gameCanvas"></canvas>
+    <div id="gameOver" class="overlay hidden">
+        <h2 id="status" style="color: #ff5252;">KROCK!</h2>
+        <button onclick="location.reload()" style="padding:10px 20px; font-size:1.1rem;">Tillbaka till meny</button>
     </div>
 </div>
 
-<div class="game-layout">
+<div class="controls-container">
     <div id="p1Pad" class="controls">
-        <button class="btn p1-btn" id="p1Up">⬆️</button>
-        <button class="btn p1-btn" id="p1Left">⬅️</button>
-        <button class="btn p1-btn" id="p1Right">➡️</button>
-        <button class="btn p1-btn" id="p1Down">⬇️</button>
-    </div>
-
-    <div style="position: relative;">
-        <canvas id="gameCanvas" width="384" height="384"></canvas>
-        
-        <div id="startScreen" class="overlay">
-            <h2 style="color:#a5d6a7">Smarta Lager</h2>
-            <label>Fart: <span id="speedValue">64</span></label>
-            <input type="range" id="speedSlider" min="1" max="128" value="64" style="width:180px; margin: 15px;">
-            <button class="action-btn" onclick="startGame('single')">SPELA ENSAM</button>
-            <button class="action-btn" style="background:#546e7a; margin-top:10px;" onclick="startGame('multi')">2 SPELARE</button>
-        </div>
-
-        <div id="gameOverScreen" class="overlay hidden">
-            <h2 id="winnerText" style="color:#ff5252">KROCK!</h2>
-            <button class="action-btn" onclick="showMenu()">MENY</button>
-        </div>
-    </div>
-
-    <div id="p2Pad" class="controls hidden">
-        <button class="btn p2-btn" id="p2Up">W</button>
-        <button class="btn p2-btn" id="p2Left">A</button>
-        <button class="btn p2-btn" id="p2Right">D</button>
-        <button class="btn p2-btn" id="p2Down">S</button>
+        <button class="btn up" onpointerdown="press(1,'UP')">↑</button>
+        <button class="btn left" onpointerdown="press(1,'LEFT')">←</button>
+        <button class="btn down" onpointerdown="press(1,'DOWN')">↓</button>
+        <button class="btn right" onpointerdown="press(1,'RIGHT')">→</button>
     </div>
 </div>
 
 <script>
     const canvas = document.getElementById("gameCanvas");
     const ctx = canvas.getContext("2d");
-    const speedSlider = document.getElementById("speedSlider");
-    const speedValue = document.getElementById("speedValue");
-
-    const box = 12; // För 12x12 pixlar
-    const canvasSize = 384; 
+    const box = 12; 
     
+    let gridCount = 20;
+    let snake1, dir1, p1Queue = [];
+    let food, gameInterval;
+
     function ladda(src) {
-        let img = new Image();
+        const img = new Image();
         img.src = src;
         return img;
     }
 
-    // DIN NYA STRUKTUR MED LAGER (6 bilder per spelare totalt)
-    // OBS: Alla dessa bilder måste ritas så att de är vända åt HÖGER. Koden roterar dem!
-    const grafik = {
+    const gfx = {
         p1: {
             body: ladda("p1-kropp.png"),
-            tailObiten: ladda("p1-svans-obiten.png"), // Längst bak
-            tailBiten: ladda("p1-svans-biten.png"),   // Mitten
-            headFram: ladda("p1-huvud-fram.png"),     // Tittar rakt fram
-            headUpp: ladda("p1-huvud-upp.png"),       // Tittar uppåt (innan sväng)
-            headNer: ladda("p1-huvud-ner.png")        // Tittar neråt (innan sväng)
-        },
-        p2: {
-            body: ladda("p2-kropp.png"),
-            tailObiten: ladda("p2-svans-obiten.png"),
-            tailBiten: ladda("p2-svans-biten.png"),
-            headFram: ladda("p2-huvud-fram.png"),
-            headUpp: ladda("p2-huvud-upp.png"),
-            headNer: ladda("p2-huvud-ner.png")
+            tailBiten: ladda("p1-svans-biten.png"),
+            tailHel: ladda("p1-svans-obiten.png"),
+            hHead: ladda("p1-huvud-fram.png"),
+            hUp: ladda("p1-huvud-upp.png"),
+            hDown: ladda("p1-huvud-ner.png")
         }
     };
 
-    let mode, gameInterval, food;
-    let p1Queue = [], p2Queue = [];
-    let snake1, dir1, p1Alive;
-    let snake2, dir2, p2Alive;
+    function startGame(m) {
+        gridCount = parseInt(document.getElementById("gridInput").value) || 20;
+        canvas.width = canvas.height = gridCount * box;
+        document.getElementById("menu").classList.add("hidden");
 
-    speedSlider.oninput = () => speedValue.innerText = speedSlider.value;
-
-    function startGame(sMode) {
-        mode = sMode;
-        document.getElementById("startScreen").classList.add("hidden");
-        document.getElementById("gameOverScreen").classList.add("hidden");
-
-        snake1 = [{x: 10*box, y: 15*box}];
-        dir1 = "RIGHT"; p1Alive = true; p1Queue = [];
-        document.getElementById("score1").innerText = "P1: 1";
-        
-        if(mode === 'multi') {
-            snake2 = [{x: 20*box, y: 15*box}];
-            dir2 = "LEFT"; p2Alive = true; p2Queue = [];
-            document.getElementById("p2Pad").classList.remove("hidden");
-            document.getElementById("score2").classList.remove("hidden");
-            document.getElementById("score2").innerText = "P2: 1";
-        } else {
-            p2Alive = false;
-            document.getElementById("p2Pad").classList.add("hidden");
-            document.getElementById("score2").classList.add("hidden");
-        }
-
+        snake1 = [{x: Math.floor(gridCount/2)*box, y: Math.floor(gridCount/2)*box}];
+        dir1 = "RIGHT";
         spawnFood();
-        const ms = 250 - (parseInt(speedSlider.value) * 1.5);
-        if(gameInterval) clearInterval(gameInterval);
-        gameInterval = setInterval(draw, ms);
+        gameInterval = setInterval(draw, 150);
     }
 
     function spawnFood() {
-        food = { x: Math.floor(Math.random() * (canvasSize/box)) * box, y: Math.floor(Math.random() * (canvasSize/box)) * box };
+        food = {
+            x: Math.floor(Math.random() * gridCount) * box,
+            y: Math.floor(Math.random() * gridCount) * box
+        };
     }
 
     function draw() {
-        processInput();
-        moveSnake(snake1, dir1, p1Alive, 1);
-        if (mode === 'multi') moveSnake(snake2, dir2, p2Alive, 2);
-
-        if (checkCollision()) return;
-
+        updatePos();
         ctx.fillStyle = "#2e7d32";
-        ctx.fillRect(0, 0, canvasSize, canvasSize);
+        ctx.fillRect(0,0, canvas.width, canvas.height);
         
-        ctx.font = "12px Arial";
+        ctx.font = "10px Arial";
         ctx.fillText("🐫", food.x, food.y + 10);
-        
-        drawSnake(snake1, dir1, grafik.p1, 1);
-        if(mode === 'multi') drawSnake(snake2, dir2, grafik.p2, 2);
-    }
 
-    // DEN NYA RIT-FUNKTIONEN MED LAGER OCH ROTATION
-    function drawSnake(s, currentDir, pGrafik, pNum) {
-        let q = pNum === 1 ? p1Queue : p2Queue;
-        
-        // Vi måste loopa baklänges (från svans till huvud) för att huvudet ska ritas ovanpå kroppen!
-        for (let i = s.length - 1; i >= 0; i--) {
-            let seg = s[i];
-            let segDir = currentDir;
-            
-            // Kolla åt vilket håll denna specifika kroppsdel rör sig
+        // RITA VARJE KAMEL I KARAVANEN
+        for(let i = 0; i < snake1.length; i++) {
+            let seg = snake1[i];
+            let moveDir = dir1; 
+
+            // Hitta riktningen för just denna kamel
             if (i > 0) {
-                let front = s[i-1];
-                if (front.x > seg.x) segDir = "RIGHT";
-                else if (front.x < seg.x) segDir = "LEFT";
-                else if (front.y > seg.y) segDir = "DOWN";
-                else segDir = "UP";
+                let front = snake1[i-1];
+                if (front.x > seg.x) moveDir = "RIGHT";
+                else if (front.x < seg.x) moveDir = "LEFT";
+                else if (front.y > seg.y) moveDir = "DOWN";
+                else if (front.y < seg.y) moveDir = "UP";
             }
 
             ctx.save();
-            // Flytta Canvas-origo till mitten av den aktuella 12x12-rutan
             ctx.translate(seg.x + box/2, seg.y + box/2);
 
-            // Rotera eller spegelvänd (Utgår från att alla dina PNGs tittar åt HÖGER)
-            if (segDir === "LEFT") {
-                ctx.scale(-1, 1);
-            } else if (segDir === "UP") {
-                ctx.rotate(-Math.PI / 2); // Rotera uppåt
-            } else if (segDir === "DOWN") {
-                ctx.rotate(Math.PI / 2);  // Rotera neråt
-            }
+            // ROTERA (Men bara om vi inte svänger, enligt ditt önskemål)
+            // Om den går horisontellt, spegelvänd vid vänster
+            if (moveDir === "LEFT") ctx.scale(-1, 1);
+            // Om den går vertikalt, rotera 90 grader
+            else if (moveDir === "UP") ctx.rotate(-Math.PI/2);
+            else if (moveDir === "DOWN") ctx.rotate(Math.PI/2);
 
-            // Hjälpfunktion för att rita en bild i lagret
-            let ritaDel = (img) => {
-                if (img && img.complete && img.naturalHeight !== 0) {
-                    ctx.drawImage(img, -box/2, -box/2, box, box);
-                }
-            };
+            // 1. RITA KROPPEN
+            drawImg(gfx.p1.body);
 
-            // Om bilden inte finns än, rita en färgad fyrkant som reserv
-            if (!pGrafik.body.complete || pGrafik.body.naturalHeight === 0) {
-                ctx.fillStyle = pNum === 1 ? "#4fc3f7" : "#ff8a65";
-                ctx.fillRect(-box/2, -box/2, box, box);
+            // 2. RITA SVANSEN (Längst bak i karavanen = hel, annars biten)
+            if (i === snake1.length - 1) {
+                drawImg(gfx.p1.tailHel);
             } else {
-                // --- LAGER 1: SVANS ---
-                if (i === s.length - 1 && s.length > 1) {
-                    ritaDel(pGrafik.tailObiten); // Sista kamelen får hel svans
-                } else {
-                    ritaDel(pGrafik.tailBiten);  // Alla andra får biten svans
-                }
+                drawImg(gfx.p1.tailBiten);
+            }
 
-                // --- LAGER 2: KROPP ---
-                ritaDel(pGrafik.body);
-
-                // --- LAGER 3: HUVUD (Bara på första rutan) ---
-                if (i === 0) {
-                    let valtHuvud = pGrafik.headFram;
-                    let nextTurn = q.length > 0 ? q[0] : segDir;
-
-                    // Logik: Om kamelen går horisontellt, men du har lagt en 
-                    // upp/ner-sväng i kön, låt huvudet titta dit redan nu!
-                    if ((segDir === "RIGHT" || segDir === "LEFT") && nextTurn === "UP") valtHuvud = pGrafik.headUpp;
-                    if ((segDir === "RIGHT" || segDir === "LEFT") && nextTurn === "DOWN") valtHuvud = pGrafik.headNer;
-                    
-                    ritaDel(valtHuvud);
+            // 3. RITA HUVUDET
+            let headImg = gfx.p1.hHead;
+            
+            // Kolla om kamelen precis framför har svängt (Hörn-logik)
+            if (i === 0 && p1Queue.length > 0) {
+                let next = p1Queue[0];
+                if ((moveDir === "RIGHT" || moveDir === "LEFT")) {
+                    if(next === "UP") headImg = gfx.p1.hUp;
+                    if(next === "DOWN") headImg = gfx.p1.hDown;
                 }
             }
-            ctx.restore(); // Återställ rotation/placering innan vi ritar nästa kamel-del
+            drawImg(headImg);
+
+            ctx.restore();
         }
     }
 
-    function processInput() {
-        if (p1Queue.length > 0) {
-            const n = p1Queue.shift();
-            if (n === "LEFT" && dir1 !== "RIGHT") dir1 = "LEFT";
-            if (n === "UP" && dir1 !== "DOWN") dir1 = "UP";
-            if (n === "RIGHT" && dir1 !== "LEFT") dir1 = "RIGHT";
-            if (n === "DOWN" && dir1 !== "UP") dir1 = "DOWN";
-        }
-        if (p2Queue.length > 0) {
-            const n = p2Queue.shift();
-            if (n === "LEFT" && dir2 !== "RIGHT") dir2 = "LEFT";
-            if (n === "UP" && dir2 !== "DOWN") dir2 = "UP";
-            if (n === "RIGHT" && dir2 !== "LEFT") dir2 = "RIGHT";
-            if (n === "DOWN" && dir2 !== "UP") dir2 = "DOWN";
-        }
+    function drawImg(img) {
+        if(img.complete) ctx.drawImage(img, -box/2, -box/2, box, box);
     }
 
-    function moveSnake(s, d, alive, pNum) {
-        if (!alive) return;
-        let head = {x: s[0].x, y: s[0].y};
-        if(d === "LEFT") head.x -= box;
-        if(d === "UP") head.y -= box;
-        if(d === "RIGHT") head.x += box;
-        if(d === "DOWN") head.y += box;
-        s.unshift(head);
-        if(head.x === food.x && head.y === food.y) {
-            document.getElementById("score"+pNum).innerText = "P"+pNum+": " + s.length;
-            spawnFood();
-        } else { s.pop(); }
-    }
-
-    function checkCollision() {
-        const h1 = snake1[0];
-        if(h1.x < 0 || h1.x >= canvasSize || h1.y < 0 || h1.y >= canvasSize || snake1.slice(1).some(s => s.x === h1.x && s.y === h1.y)) return die("P2 VANN!");
-        if(mode === 'multi') {
-            const h2 = snake2[0];
-            if(h2.x < 0 || h2.x >= canvasSize || h2.y < 0 || h2.y >= canvasSize || snake2.slice(1).some(s => s.x === h2.x && s.y === h2.y)) return die("P1 VANN!");
-            if(snake2.some(s => s.x === h1.x && s.y === h1.y)) return die("RÖD VANN!");
-            if(snake1.some(s => s.x === h2.x && s.y === h2.y)) return die("BLÅ VANN!");
+    function updatePos() {
+        if(p1Queue.length > 0) {
+            let n = p1Queue.shift();
+            if(n==="UP" && dir1!=="DOWN") dir1=n;
+            if(n==="DOWN" && dir1!=="UP") dir1=n;
+            if(n==="LEFT" && dir1!=="RIGHT") dir1=n;
+            if(n==="RIGHT" && dir1!=="LEFT") dir1=n;
         }
-        return false;
+
+        let head = {...snake1[0]};
+        if(dir1 === "UP") head.y -= box;
+        if(dir1 === "DOWN") head.y += box;
+        if(dir1 === "LEFT") head.x -= box;
+        if(dir1 === "RIGHT") head.x += box;
+
+        if(head.x < 0 || head.x >= canvas.width || head.y < 0 || head.y >= canvas.height || 
+           snake1.some(s => s.x === head.x && s.y === head.y)) {
+            die();
+        }
+
+        snake1.unshift(head);
+        if(head.x === food.x && head.y === food.y) spawnFood();
+        else snake1.pop();
     }
 
-    function die(msg) {
+    function die() {
         clearInterval(gameInterval);
-        document.getElementById("winnerText").innerText = msg;
-        document.getElementById("gameOverScreen").classList.remove("hidden");
-        return true;
-    }
-
-    function showMenu() {
-        document.getElementById("gameOverScreen").classList.add("hidden");
-        document.getElementById("startScreen").classList.remove("hidden");
+        document.getElementById("gameOver").classList.remove("hidden");
     }
 
     function press(p, d) {
-        if (navigator.vibrate) navigator.vibrate(10);
-        if(p === 1 && p1Queue.length < 2) p1Queue.push(d);
-        if(p === 2 && p2Queue.length < 2) p2Queue.push(d);
+        if(p === 1) p1Queue.push(d);
     }
-
-    const p1Map = { "p1Up": "UP", "p1Down": "DOWN", "p1Left": "LEFT", "p1Right": "RIGHT" };
-    Object.keys(p1Map).forEach(id => { document.getElementById(id).addEventListener("pointerdown", (e) => { e.preventDefault(); press(1, p1Map[id]); }); });
-    const p2Map = { "p2Up": "UP", "p2Down": "DOWN", "p2Left": "LEFT", "p2Right": "RIGHT" };
-    Object.keys(p2Map).forEach(id => { document.getElementById(id).addEventListener("pointerdown", (e) => { e.preventDefault(); press(2, p2Map[id]); }); });
-
-    document.addEventListener("keydown", e => {
-        const k = e.key.toLowerCase();
-        if (mode === 'single') {
-            if(k === 'arrowup' || k === 'w') press(1, "UP"); if(k === 'arrowdown' || k === 's') press(1, "DOWN");
-            if(k === 'arrowleft' || k === 'a') press(1, "LEFT"); if(k === 'arrowright' || k === 'd') press(1, "RIGHT");
-        } else {
-            if(k === 'arrowup') press(1, "UP"); if(k === 'arrowdown') press(1, "DOWN");
-            if(k === 'arrowleft') press(1, "LEFT"); if(k === 'arrowright') press(1, "RIGHT");
-            if(k === 'w') press(2, "UP"); if(k === 's') press(2, "DOWN");
-            if(k === 'a') press(2, "LEFT"); if(k === 'd') press(2, "RIGHT");
-        }
-    });
 </script>
 </body>
 </html>
