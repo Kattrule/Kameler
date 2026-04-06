@@ -3,15 +3,15 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
-    <title>Kamelkaravanen Multiplayer</title>
+    <title>Kamelkaravanen Turbo</title>
     <style>
         :root {
             --desert-sand: #f4a460;
             --desert-dark: #8b4513;
             --text-color: #3e2723;
             --bg-color: #ffdead;
-            --p1-color: #2563eb; /* Blå */
-            --p2-color: #dc2626; /* Röd */
+            --p1-color: #2563eb;
+            --p2-color: #dc2626;
         }
 
         body, html {
@@ -20,221 +20,173 @@
             color: var(--text-color);
             font-family: sans-serif;
             display: flex; flex-direction: column; align-items: center;
-            height: 100vh; overflow: hidden; touch-action: none;
+            height: 100vh; overflow: hidden; 
+            touch-action: none; 
         }
 
         .header { text-align: center; margin: 10px 0; }
-        h1 { margin: 0; font-size: 1.5rem; color: var(--desert-dark); }
+        h1 { margin: 0; font-size: 1.2rem; color: var(--desert-dark); }
         
         .score-board {
             display: flex; justify-content: center; gap: 20px;
-            font-size: 1.2rem; font-weight: bold; margin-top: 5px;
+            font-size: 1rem; font-weight: bold;
         }
+
         .p1-score { color: var(--p1-color); }
         .p2-score { color: var(--p2-color); }
 
         .game-layout {
             display: flex; flex-direction: row; align-items: center; justify-content: center;
-            gap: 20px; width: 100%; max-width: 800px;
+            gap: 10px; width: 100%; max-width: 900px;
         }
-
-        .game-container { position: relative; }
 
         canvas {
             background-color: var(--desert-sand);
             border: 4px solid var(--desert-dark);
             border-radius: 8px;
             display: block;
-            image-rendering: pixelated;
+            touch-action: none;
         }
 
         .overlay {
             position: absolute; top: 0; left: 0; right: 0; bottom: 0;
             background: rgba(255, 222, 173, 0.95);
             display: flex; flex-direction: column; justify-content: center; align-items: center;
-            z-index: 10; border-radius: 4px; text-align: center; padding: 20px;
+            z-index: 10; text-align: center; padding: 20px;
         }
 
         .hidden { display: none !important; }
 
-        /* Inställningar / Spak */
-        .settings-box {
-            background: white; padding: 15px; border-radius: 10px; border: 2px solid var(--desert-dark);
-            margin-bottom: 15px; width: 80%;
-        }
-        .slider-container { display: flex; flex-direction: column; gap: 5px; margin: 10px 0; }
-        input[type="range"] { width: 100%; cursor: pointer; }
-
-        /* Dubbla Kontroller */
-        .controls-wrapper { display: flex; flex-direction: row; gap: 10px; }
-        
         .controls {
-            display: grid; grid-template-columns: repeat(3, 60px); grid-template-rows: repeat(3, 60px); gap: 5px;
+            display: grid; grid-template-columns: repeat(3, 65px); grid-template-rows: repeat(3, 65px); gap: 8px;
+            touch-action: none; 
+            user-select: none;
+            -webkit-user-select: none;
         }
 
         .btn {
-            color: white; border: none; border-radius: 10px;
-            font-size: 1.5rem; cursor: pointer; font-weight: bold;
+            color: white; border: none; border-radius: 12px;
+            font-size: 1.5rem; cursor: pointer;
             display: flex; justify-content: center; align-items: center;
-            user-select: none; -webkit-tap-highlight-color: transparent;
+            -webkit-tap-highlight-color: transparent;
+            touch-action: none;
         }
-        .btn:active { transform: translateY(4px); }
 
-        /* Spelare 1 Knappar (Blå) */
         .p1-btn { background-color: var(--p1-color); box-shadow: 0 4px 0 #1e40af; }
-        .p1-btn:active { box-shadow: 0 0 0 #1e40af; }
-        
-        /* Spelare 2 Knappar (Röd) */
         .p2-btn { background-color: var(--p2-color); box-shadow: 0 4px 0 #991b1b; }
-        .p2-btn:active { box-shadow: 0 0 0 #991b1b; }
 
-        #p1Up { grid-column: 2; grid-row: 1; }
-        #p1Left { grid-column: 1; grid-row: 2; }
-        #p1Right { grid-column: 3; grid-row: 2; }
-        #p1Down { grid-column: 2; grid-row: 3; }
+        .btn:active {
+            transform: translateY(2px);
+            box-shadow: 0 1px 0 #000;
+            filter: brightness(1.2);
+        }
 
-        #p2Up { grid-column: 2; grid-row: 1; }
-        #p2Left { grid-column: 1; grid-row: 2; }
-        #p2Right { grid-column: 3; grid-row: 2; }
-        #p2Down { grid-column: 2; grid-row: 3; }
+        #p1Up, #p2Up { grid-column: 2; grid-row: 1; }
+        #p1Left, #p2Left { grid-column: 1; grid-row: 2; }
+        #p1Right, #p2Right { grid-column: 3; grid-row: 2; }
+        #p1Down, #p2Down { grid-column: 2; grid-row: 3; }
 
         .action-btn {
-            background: var(--desert-dark); color: white; margin: 5px;
-            padding: 12px 20px; font-size: 1rem; border: none;
-            border-radius: 8px; cursor: pointer; font-weight: bold;
+            background: var(--desert-dark); color: white; padding: 15px;
+            border-radius: 8px; font-weight: bold; border: none; cursor: pointer;
         }
 
-        /* Responsivitet för mobiler (stående skärm) */
-        @media (max-width: 700px) {
-            .game-layout { flex-direction: column; gap: 10px; }
-            .controls-wrapper { width: 100%; justify-content: space-around; }
-            .controls { grid-template-columns: repeat(3, 50px); grid-template-rows: repeat(3, 50px); }
+        @media (max-width: 750px) {
+            .game-layout { flex-direction: column; }
+            .controls { grid-template-columns: repeat(3, 55px); grid-template-rows: repeat(3, 55px); }
         }
     </style>
 </head>
 <body>
 
 <div class="header">
-    <h1>Kamelkaravanen 🐫</h1>
+    <h1>Kamelkaravanen Turbo 🐫</h1>
     <div class="score-board">
-        <div id="score1" class="p1-score">P1 Längd: 1</div>
-        <div id="score2" class="p2-score hidden">P2 Längd: 1</div>
+        <div id="score1" class="p1-score">P1: 1</div>
+        <div id="score2" class="p2-score hidden">P2: 1</div>
     </div>
 </div>
 
 <div class="game-layout">
     <div id="p1Pad" class="controls">
-        <button class="btn p1-btn" id="p1Up">W</button>
-        <button class="btn p1-btn" id="p1Left">A</button>
-        <button class="btn p1-btn" id="p1Right">D</button>
-        <button class="btn p1-btn" id="p1Down">S</button>
+        <button class="btn p1-btn" id="p1Up">⬆️</button>
+        <button class="btn p1-btn" id="p1Left">⬅️</button>
+        <button class="btn p1-btn" id="p1Right">➡️</button>
+        <button class="btn p1-btn" id="p1Down">⬇️</button>
     </div>
 
-    <div class="game-container">
+    <div style="position: relative;">
         <canvas id="gameCanvas" width="300" height="300"></canvas>
-
+        
         <div id="startScreen" class="overlay">
-            <h2 style="margin-top: 0;">Inställningar</h2>
-            <div class="settings-box">
-                <div class="slider-container">
-                    <label for="speedSlider"><b>Hastighet:</b> <span id="speedValue">64</span></label>
-                    <input type="range" id="speedSlider" min="1" max="128" value="64">
-                </div>
-            </div>
-            <button class="action-btn" onclick="startGame('single')">1 Spelare</button>
-            <button class="action-btn" style="background: #4b5563;" onclick="startGame('multi')">2 Spelare (Multiplayer)</button>
+            <label>Fart: <span id="speedValue">64</span></label>
+            <input type="range" id="speedSlider" min="1" max="128" value="64" style="width:200px; margin: 15px;">
+            <button class="action-btn" onclick="startGame('single')">1 SPELARE</button>
+            <button class="action-btn" style="background:#4b5563; margin-top:10px;" onclick="startGame('multi')">2 SPELARE</button>
         </div>
 
         <div id="gameOverScreen" class="overlay hidden">
-            <h2 id="winnerText" style="color: #d32f2f; margin: 0; font-size: 2rem;">KROCK!</h2>
-            <p id="finalScore"></p>
-            <button class="action-btn" onclick="showMenu()">Tillbaka till Menyn</button>
+            <h2 id="winnerText">KROCK!</h2>
+            <button class="action-btn" onclick="showMenu()">MENY</button>
         </div>
     </div>
 
     <div id="p2Pad" class="controls hidden">
-        <button class="btn p2-btn" id="p2Up">⬆️</button>
-        <button class="btn p2-btn" id="p2Left">⬅️</button>
-        <button class="btn p2-btn" id="p2Right">➡️</button>
-        <button class="btn p2-btn" id="p2Down">⬇️</button>
+        <button class="btn p2-btn" id="p2Up">W</button>
+        <button class="btn p2-btn" id="p2Left">A</button>
+        <button class="btn p2-btn" id="p2Right">D</button>
+        <button class="btn p2-btn" id="p2Down">S</button>
     </div>
 </div>
 
 <script>
     const canvas = document.getElementById("gameCanvas");
     const ctx = canvas.getContext("2d");
-    
-    // UI Element
-    const score1El = document.getElementById("score1");
-    const score2El = document.getElementById("score2");
-    const startScreen = document.getElementById("startScreen");
-    const gameOverScreen = document.getElementById("gameOverScreen");
-    const p2Pad = document.getElementById("p2Pad");
     const speedSlider = document.getElementById("speedSlider");
     const speedValue = document.getElementById("speedValue");
 
-    const box = 20; // Lite mindre rutor så två kameler får bättre plats
+    const box = 20;
     const canvasSize = 300;
+    let mode, gameInterval, food;
     
-    let mode = 'single';
-    let gameInterval;
-    let food = {};
+    let p1Queue = [];
+    let p2Queue = [];
     
-    // Spelare 1
-    let snake1, dir1, nextDir1;
-    let p1Alive;
+    let snake1, dir1, p1Alive;
+    let snake2, dir2, p2Alive;
 
-    // Spelare 2
-    let snake2, dir2, nextDir2;
-    let p2Alive;
-
-    // Uppdatera texten när man drar i spaken
-    speedSlider.addEventListener("input", function() {
-        speedValue.innerText = this.value;
-    });
+    speedSlider.oninput = () => speedValue.innerText = speedSlider.value;
 
     function showMenu() {
-        gameOverScreen.classList.add("hidden");
-        startScreen.classList.remove("hidden");
-        ctx.fillStyle = "#f4a460";
-        ctx.fillRect(0, 0, canvasSize, canvasSize);
+        document.getElementById("gameOverScreen").classList.add("hidden");
+        document.getElementById("startScreen").classList.remove("hidden");
     }
 
-    function startGame(selectedMode) {
-        mode = selectedMode;
-        startScreen.classList.add("hidden");
-        gameOverScreen.classList.add("hidden");
-        
-        // P1 Setup
-        snake1 = [{ x: 3 * box, y: 7 * box }];
-        dir1 = "RIGHT"; nextDir1 = "RIGHT";
-        p1Alive = true;
-        score1El.innerText = "P1 Längd: 1";
+    function startGame(sMode) {
+        mode = sMode;
+        document.getElementById("startScreen").classList.add("hidden");
+        document.getElementById("gameOverScreen").classList.add("hidden");
 
-        // P2 Setup
-        if (mode === 'multi') {
-            snake2 = [{ x: 11 * box, y: 7 * box }];
-            dir2 = "LEFT"; nextDir2 = "LEFT";
-            p2Alive = true;
-            score2El.classList.remove("hidden");
-            score2El.innerText = "P2 Längd: 1";
-            p2Pad.classList.remove("hidden");
+        snake1 = [{x: 2*box, y: 7*box}];
+        dir1 = "RIGHT"; p1Alive = true; p1Queue = [];
+        document.getElementById("score1").innerText = "P1: 1";
+        
+        if(mode === 'multi') {
+            snake2 = [{x: 12*box, y: 7*box}];
+            dir2 = "LEFT"; p2Alive = true; p2Queue = [];
+            document.getElementById("p2Pad").classList.remove("hidden");
+            document.getElementById("score2").classList.remove("hidden");
+            document.getElementById("score2").innerText = "P2: 1";
         } else {
             p2Alive = false;
-            snake2 = [];
-            score2El.classList.add("hidden");
-            p2Pad.classList.add("hidden");
+            document.getElementById("p2Pad").classList.add("hidden");
+            document.getElementById("score2").classList.add("hidden");
         }
 
         spawnFood();
-        
-        // Räkna ut fart: 1 (slö) till 128 (snabb). Konverteras till millisekunder.
-        const sliderVal = parseInt(speedSlider.value);
-        // Map 1-128 till ca 350ms - 40ms
-        const msSpeed = 350 - (sliderVal * 2.4); 
-
+        const ms = 350 - (parseInt(speedSlider.value) * 2.4);
         if(gameInterval) clearInterval(gameInterval);
-        gameInterval = setInterval(draw, msSpeed);
+        gameInterval = setInterval(draw, ms);
     }
 
     function spawnFood() {
@@ -242,168 +194,137 @@
             x: Math.floor(Math.random() * (canvasSize/box)) * box,
             y: Math.floor(Math.random() * (canvasSize/box)) * box
         };
-        // Förhindra mat på kameler
-        const onP1 = snake1.some(seg => seg.x === food.x && seg.y === food.y);
-        const onP2 = mode === 'multi' && snake2.some(seg => seg.x === food.x && seg.y === food.y);
-        if (onP1 || onP2) spawnFood();
     }
 
     function draw() {
-        // --- UPPDATERA POSITIONER ---
-        if (p1Alive) {
-            dir1 = nextDir1;
-            let h1 = { x: snake1[0].x, y: snake1[0].y };
-            if (dir1 === "LEFT") h1.x -= box;
-            if (dir1 === "UP") h1.y -= box;
-            if (dir1 === "RIGHT") h1.x += box;
-            if (dir1 === "DOWN") h1.y += box;
-            snake1.unshift(h1); // Lägg till nytt huvud
+        if (p1Queue.length > 0) {
+            const next = p1Queue.shift();
+            if (next === "LEFT" && dir1 !== "RIGHT") dir1 = "LEFT";
+            if (next === "UP" && dir1 !== "DOWN") dir1 = "UP";
+            if (next === "RIGHT" && dir1 !== "LEFT") dir1 = "RIGHT";
+            if (next === "DOWN" && dir1 !== "UP") dir1 = "DOWN";
         }
 
-        if (p2Alive) {
-            dir2 = nextDir2;
-            let h2 = { x: snake2[0].x, y: snake2[0].y };
-            if (dir2 === "LEFT") h2.x -= box;
-            if (dir2 === "UP") h2.y -= box;
-            if (dir2 === "RIGHT") h2.x += box;
-            if (dir2 === "DOWN") h2.y += box;
-            snake2.unshift(h2);
+        if (p2Queue.length > 0) {
+            const next = p2Queue.shift();
+            if (next === "LEFT" && dir2 !== "RIGHT") dir2 = "LEFT";
+            if (next === "UP" && dir2 !== "DOWN") dir2 = "UP";
+            if (next === "RIGHT" && dir2 !== "LEFT") dir2 = "RIGHT";
+            if (next === "DOWN" && dir2 !== "UP") dir2 = "DOWN";
         }
 
-        // --- KOLLISIONER & MAT ---
-        let p1Crashed = false;
-        let p2Crashed = false;
+        moveSnake(snake1, dir1, p1Alive, 1);
+        if (mode === 'multi') moveSnake(snake2, dir2, p2Alive, 2);
 
-        if (p1Alive) {
-            let h1 = snake1[0];
-            // Vägg eller sig själv
-            if (h1.x < 0 || h1.x >= canvasSize || h1.y < 0 || h1.y >= canvasSize || 
-                snake1.some((s, i) => i !== 0 && s.x === h1.x && s.y === h1.y)) {
-                p1Crashed = true;
-            }
-            // Äta mat
-            if (h1.x === food.x && h1.y === food.y) {
-                score1El.innerText = "P1 Längd: " + snake1.length;
-                spawnFood();
-            } else {
-                snake1.pop(); // Ta bort svans om inte ätit
-            }
-        }
+        if (checkCollision()) return;
 
-        if (p2Alive) {
-            let h2 = snake2[0];
-            if (h2.x < 0 || h2.x >= canvasSize || h2.y < 0 || h2.y >= canvasSize || 
-                snake2.some((s, i) => i !== 0 && s.x === h2.x && s.y === h2.y)) {
-                p2Crashed = true;
-            }
-            if (h2.x === food.x && h2.y === food.y) {
-                score2El.innerText = "P2 Längd: " + snake2.length;
-                spawnFood();
-            } else {
-                snake2.pop();
-            }
-        }
-
-        // Multiplayer-specifika krockar (krocka i varandra)
-        if (mode === 'multi' && p1Alive && p2Alive) {
-            let h1 = snake1[0];
-            let h2 = snake2[0];
-            
-            // P1 krockar i P2s kropp
-            if (snake2.some(s => s.x === h1.x && s.y === h1.y)) p1Crashed = true;
-            // P2 krockar i P1s kropp
-            if (snake1.some(s => s.x === h2.x && s.y === h2.y)) p2Crashed = true;
-        }
-
-        // Hantera Game Over
-        if (p1Crashed || p2Crashed) {
-            clearInterval(gameInterval);
-            let resultText = "KROCK!";
-            
-            if (mode === 'multi') {
-                if (p1Crashed && p2Crashed) resultText = "BÅDA KROCKADE! Oavgjort.";
-                else if (p1Crashed) resultText = "RÖD SPELARE VINNER! 🎉";
-                else if (p2Crashed) resultText = "BLÅ SPELARE VINNER! 🎉";
-            }
-            
-            document.getElementById("winnerText").innerText = resultText;
-            document.getElementById("finalScore").innerText = mode === 'single' ? 
-                `Längd: ${snake1.length}` : `P1: ${snake1.length} | P2: ${snake2.length}`;
-            gameOverScreen.classList.remove("hidden");
-            return;
-        }
-
-        // --- RITA UT ALLT ---
+        // Rita öknen
         ctx.fillStyle = "#f4a460";
         ctx.fillRect(0, 0, canvasSize, canvasSize);
+        
+        // Rita maten
+        ctx.font = "18px Arial";
+        ctx.fillText("🐪", food.x - 1, food.y + 16);
+        
+        // Rita kamelerna (utan färgade rutor)
+        drawSnake(snake1);
+        if(mode === 'multi') drawSnake(snake2);
+    }
 
-        ctx.font = "16px Arial";
-        ctx.fillText("🐪", food.x, food.y + 15);
-
-        // Rita P1 (Blå bakgrund bakom)
-        snake1.forEach((seg, i) => {
-            ctx.fillStyle = "rgba(37, 99, 235, 0.4)"; // Blå markering
-            ctx.fillRect(seg.x, seg.y, box, box);
-            ctx.fillText(i === 0 ? "🐫" : "🐪", seg.x, seg.y + 15);
-        });
-
-        // Rita P2 (Röd bakgrund bakom)
-        if (mode === 'multi') {
-            snake2.forEach((seg, i) => {
-                ctx.fillStyle = "rgba(220, 38, 38, 0.4)"; // Röd markering
-                ctx.fillRect(seg.x, seg.y, box, box);
-                ctx.fillText(i === 0 ? "🐫" : "🐪", seg.x, seg.y + 15);
-            });
+    function moveSnake(s, d, alive, playerNum) {
+        if (!alive) return;
+        let head = {x: s[0].x, y: s[0].y};
+        if(d === "LEFT") head.x -= box;
+        if(d === "UP") head.y -= box;
+        if(d === "RIGHT") head.x += box;
+        if(d === "DOWN") head.y += box;
+        
+        s.unshift(head);
+        if(head.x === food.x && head.y === food.y) {
+            if (playerNum === 1) document.getElementById("score1").innerText = "P1: " + s.length;
+            if (playerNum === 2) document.getElementById("score2").innerText = "P2: " + s.length;
+            spawnFood();
+        } else {
+            s.pop();
         }
     }
 
-    // --- KONTROLLER ---
+    function checkCollision() {
+        const h1 = snake1[0];
+        if(h1.x < 0 || h1.x >= canvasSize || h1.y < 0 || h1.y >= canvasSize) return die(mode === 'multi' ? "P2 VANN!" : "KROCK!");
+        if(snake1.slice(1).some(s => s.x === h1.x && s.y === h1.y)) return die(mode === 'multi' ? "P2 VANN!" : "KROCK!");
 
-    // P1 (WASD)
-    function handleP1(newDir) {
-        if (!p1Alive) return;
-        if (newDir === "LEFT" && dir1 !== "RIGHT") nextDir1 = "LEFT";
-        if (newDir === "UP" && dir1 !== "DOWN") nextDir1 = "UP";
-        if (newDir === "RIGHT" && dir1 !== "LEFT") nextDir1 = "RIGHT";
-        if (newDir === "DOWN" && dir1 !== "UP") nextDir1 = "DOWN";
+        if(mode === 'multi') {
+            const h2 = snake2[0];
+            if(h2.x < 0 || h2.x >= canvasSize || h2.y < 0 || h2.y >= canvasSize) return die("P1 VANN!");
+            if(snake2.slice(1).some(s => s.x === h2.x && s.y === h2.y)) return die("P1 VANN!");
+            
+            if(snake2.some(s => s.x === h1.x && s.y === h1.y)) return die("RÖD VANN!");
+            if(snake1.some(s => s.x === h2.x && s.y === h2.y)) return die("BLÅ VANN!");
+        }
+        return false;
     }
 
-    // P2 (Pilar)
-    function handleP2(newDir) {
-        if (!p2Alive) return;
-        if (newDir === "LEFT" && dir2 !== "RIGHT") nextDir2 = "LEFT";
-        if (newDir === "UP" && dir2 !== "DOWN") nextDir2 = "UP";
-        if (newDir === "RIGHT" && dir2 !== "LEFT") nextDir2 = "RIGHT";
-        if (newDir === "DOWN" && dir2 !== "UP") nextDir2 = "DOWN";
+    function die(msg) {
+        clearInterval(gameInterval);
+        document.getElementById("winnerText").innerText = msg;
+        document.getElementById("gameOverScreen").classList.remove("hidden");
+        return true;
     }
 
-    // Lyssna på tangenter
-    document.addEventListener("keydown", e => {
-        // P1
-        if (e.key === "w" || e.key === "W") handleP1("UP");
-        if (e.key === "s" || e.key === "S") handleP1("DOWN");
-        if (e.key === "a" || e.key === "A") handleP1("LEFT");
-        if (e.key === "d" || e.key === "D") handleP1("RIGHT");
-        
-        // P2
-        if (e.key === "ArrowUp") handleP2("UP");
-        if (e.key === "ArrowDown") handleP2("DOWN");
-        if (e.key === "ArrowLeft") handleP2("LEFT");
-        if (e.key === "ArrowRight") handleP2("RIGHT");
-    });
+    function drawSnake(s) {
+        s.forEach((seg, i) => {
+            ctx.font = "18px Arial";
+            ctx.fillText(i === 0 ? "🐫" : "🐪", seg.x - 1, seg.y + 16);
+        });
+    }
 
-    // Touch-knappar (Pointerdown för noll fördröjning)
+    function press(player, d) {
+        if (navigator.vibrate) navigator.vibrate(10);
+        if(player === 1) {
+            if(p1Queue.length < 2) p1Queue.push(d);
+        } else {
+            if(p2Queue.length < 2) p2Queue.push(d);
+        }
+    }
+
     const p1Map = { "p1Up": "UP", "p1Down": "DOWN", "p1Left": "LEFT", "p1Right": "RIGHT" };
     Object.keys(p1Map).forEach(id => {
-        document.getElementById(id).addEventListener("pointerdown", (e) => { e.preventDefault(); handleP1(p1Map[id]); });
+        document.getElementById(id).addEventListener("pointerdown", (e) => {
+            e.preventDefault(); press(1, p1Map[id]);
+        });
     });
 
     const p2Map = { "p2Up": "UP", "p2Down": "DOWN", "p2Left": "LEFT", "p2Right": "RIGHT" };
     Object.keys(p2Map).forEach(id => {
-        document.getElementById(id).addEventListener("pointerdown", (e) => { e.preventDefault(); handleP2(p2Map[id]); });
+        document.getElementById(id).addEventListener("pointerdown", (e) => {
+            e.preventDefault(); press(2, p2Map[id]);
+        });
     });
 
-    showMenu();
+    document.addEventListener("keydown", e => {
+        const k = e.key.toLowerCase();
+        
+        // I enspelarläget funkar både pilar och WASD för bekvämlighet
+        if (mode === 'single') {
+            if(k === 'arrowup' || k === 'w') press(1, "UP"); 
+            if(k === 'arrowdown' || k === 's') press(1, "DOWN");
+            if(k === 'arrowleft' || k === 'a') press(1, "LEFT"); 
+            if(k === 'arrowright' || k === 'd') press(1, "RIGHT");
+        } else {
+            // I multiplayer får P1 pilarna och P2 får WASD
+            if(k === 'arrowup') press(1, "UP"); 
+            if(k === 'arrowdown') press(1, "DOWN");
+            if(k === 'arrowleft') press(1, "LEFT"); 
+            if(k === 'arrowright') press(1, "RIGHT");
+            
+            if(k === 'w') press(2, "UP"); 
+            if(k === 's') press(2, "DOWN");
+            if(k === 'a') press(2, "LEFT"); 
+            if(k === 'd') press(2, "RIGHT");
+        }
+    });
+
 </script>
 </body>
 </html>
