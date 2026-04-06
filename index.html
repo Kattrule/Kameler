@@ -3,160 +3,163 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
-    <title>Kamelkaravanen - Full Version</title>
+    <title>Kamelkaravanen HD</title>
     <style>
         :root {
-            --grass-green: #2e7d32; 
-            --desert-dark: #1b5e20;
-            --bg-color: #1b3022;
+            --grass: #4caf50;
+            --sand: #f4d03f;
+            --p1-color: #2196f3;
+            --p2-color: #f44336;
+            --ui-bg: rgba(255, 255, 255, 0.1);
         }
 
         body, html {
             margin: 0; padding: 0;
-            background-color: var(--bg-color);
-            color: white;
-            font-family: sans-serif;
+            background-color: #1a1a1a;
+            color: white; font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
             display: flex; flex-direction: column; align-items: center;
-            min-height: 100vh; touch-action: none; 
+            height: 100vh; overflow: hidden;
         }
 
-        .menu-area {
-            background: rgba(0,0,0,0.7);
-            padding: 20px; border-radius: 15px; margin: 10px;
-            display: flex; flex-direction: column; align-items: center; gap: 15px;
-            z-index: 100; border: 2px solid #444;
+        /* MENY-STIL */
+        .menu-card {
+            background: #2c3e50;
+            padding: 15px; border-radius: 15px;
+            box-shadow: 0 10px 30px rgba(0,0,0,0.5);
+            margin: 10px; width: 90%; max-width: 400px;
+            display: flex; flex-direction: column; gap: 10px;
+            border: 2px solid #34495e;
         }
 
-        .menu-row { display: flex; align-items: center; gap: 10px; width: 100%; justify-content: space-between; }
+        .menu-row { display: flex; justify-content: space-between; align-items: center; }
+        
+        input[type="range"], input[type="number"] { accent-color: var(--sand); }
 
-        canvas {
-            background-color: var(--grass-green);
-            border: 4px solid var(--desert-dark);
-            image-rendering: pixelated;
-            max-width: 95vw; max-height: 45vh;
+        /* SPELPLAN */
+        #canvasContainer {
+            position: relative;
+            box-shadow: 0 0 20px rgba(0,0,0,0.5);
+            border: 3px solid #333;
+            background: var(--grass);
         }
 
-        /* KNAPPAR */
+        canvas { display: block; image-rendering: pixelated; }
+
+        /* SNYGGARE KNAPPAR */
         .controls-container {
             display: flex; justify-content: space-around; width: 100%;
-            padding: 10px; margin-top: auto; margin-bottom: 20px;
+            padding: 15px; margin-top: auto; background: #111;
         }
 
-        .controls {
-            display: grid; grid-template-columns: repeat(3, 60px); grid-template-rows: repeat(2, 60px); gap: 10px;
+        .d-pad {
+            display: grid; grid-template-columns: repeat(3, 55px); grid-template-rows: repeat(2, 55px); gap: 8px;
         }
 
-        .btn {
-            background: #444; color: white; border: none; border-radius: 12px;
-            font-size: 1.5rem; display: flex; align-items: center; justify-content: center;
-            box-shadow: 0 5px 0 #222; touch-action: none;
+        .game-btn {
+            background: #333; color: white; border: none; border-radius: 15px;
+            font-size: 1.4rem; display: flex; align-items: center; justify-content: center;
+            box-shadow: 0 4px 0 #000; transition: 0.1s;
         }
-        .btn:active { transform: translateY(3px); box-shadow: 0 2px 0 #000; }
+        .game-btn:active { transform: translateY(3px); box-shadow: 0 1px 0 #000; background: #444; }
         
+        .p1-btn { border-left: 4px solid var(--p1-color); }
+        .p2-btn { border-left: 4px solid var(--p2-color); }
+
         .up { grid-column: 2; grid-row: 1; }
         .left { grid-column: 1; grid-row: 2; }
         .down { grid-column: 2; grid-row: 2; }
         .right { grid-column: 3; grid-row: 2; }
 
+        .action-btn {
+            background: var(--sand); color: #000; font-weight: bold;
+            padding: 10px; border: none; border-radius: 8px; cursor: pointer;
+        }
+
         .hidden { display: none !important; }
-        .overlay { position: absolute; top: 20%; background: rgba(0,0,0,0.9); padding: 30px; border-radius: 20px; text-align: center; z-index: 100; }
-        
-        .p1-color { color: #4fc3f7; }
-        .p2-color { color: #ff8a65; }
+        .overlay { 
+            position: absolute; top: 0; left: 0; right: 0; bottom: 0;
+            background: rgba(0,0,0,0.8); display: flex; flex-direction: column;
+            justify-content: center; align-items: center; z-index: 10;
+        }
     </style>
 </head>
 <body>
 
-<div class="menu-area" id="menu">
-    <h2>Kamel-Inställningar</h2>
+<div class="menu-card" id="menu">
+    <h3 style="margin:0; text-align:center; color:var(--sand);">KAMEL INSTÄLLNINGAR</h3>
     <div class="menu-row">
-        <label>Bredd (rutor):</label>
-        <input type="number" id="gridInput" value="20" style="width:60px;">
+        <span>Bredd (rutor):</span>
+        <input type="number" id="gridInput" value="15" style="width:50px;">
     </div>
     <div class="menu-row">
-        <label>Hastighet:</label>
-        <input type="range" id="speedSlider" min="1" max="100" value="50">
+        <span>Hastighet:</span>
+        <input type="range" id="speedSlider" min="1" max="100" value="60">
     </div>
-    <div style="display:flex; gap:10px;">
-        <button onclick="startGame('single')" style="padding:10px;">1 SPELARE</button>
-        <button onclick="startGame('multi')" style="padding:10px; background:#546e7a; color:white;">2 SPELARE</button>
+    <div style="display:grid; grid-template-columns: 1fr 1fr; gap:10px;">
+        <button class="action-btn" onclick="startGame('single')">1 SPELARE</button>
+        <button class="action-btn" style="background:#95a5a6" onclick="startGame('multi')">2 SPELARE</button>
     </div>
 </div>
 
-<div style="position: relative;">
+<div id="canvasContainer">
     <canvas id="gameCanvas"></canvas>
     <div id="gameOver" class="overlay hidden">
-        <h2 id="status">KROCK!</h2>
-        <button onclick="location.reload()">MENY</button>
+        <h2 id="status" style="color:var(--p2-color)">KROCK!</h2>
+        <button class="action-btn" onclick="location.reload()">TILL MENYN</button>
     </div>
 </div>
 
 <div class="controls-container">
-    <div id="p1Pad" class="controls">
-        <button class="btn up" onpointerdown="press(1,'UP')">↑</button>
-        <button class="btn left" onpointerdown="press(1,'LEFT')">←</button>
-        <button class="btn down" onpointerdown="press(1,'DOWN')">↓</button>
-        <button class="btn right" onpointerdown="press(1,'RIGHT')">→</button>
+    <div id="p1Pad" class="d-pad">
+        <button class="game-btn p1-btn up" onpointerdown="press(1,'UP')">▲</button>
+        <button class="game-btn p1-btn left" onpointerdown="press(1,'LEFT')">◀</button>
+        <button class="game-btn p1-btn down" onpointerdown="press(1,'DOWN')">▼</button>
+        <button class="game-btn p1-btn right" onpointerdown="press(1,'RIGHT')">▶</button>
     </div>
 
-    <div id="p2Pad" class="controls hidden">
-        <button class="btn up" onpointerdown="press(2,'UP')" style="background:#822;">W</button>
-        <button class="btn left" onpointerdown="press(2,'LEFT')" style="background:#822;">A</button>
-        <button class="btn down" onpointerdown="press(2,'DOWN')" style="background:#822;">S</button>
-        <button class="btn right" onpointerdown="press(2,'RIGHT')" style="background:#822;">D</button>
+    <div id="p2Pad" class="d-pad hidden">
+        <button class="game-btn p2-btn up" onpointerdown="press(2,'UP')">W</button>
+        <button class="game-btn p2-btn left" onpointerdown="press(2,'LEFT')">A</button>
+        <button class="game-btn p2-btn down" onpointerdown="press(2,'DOWN')">S</button>
+        <button class="game-btn p2-btn right" onpointerdown="press(2,'RIGHT')">D</button>
     </div>
 </div>
 
 <script>
     const canvas = document.getElementById("gameCanvas");
     const ctx = canvas.getContext("2d");
-    const box = 12; 
     
-    let gridCount, snake1, dir1, p1Queue, snake2, dir2, p2Queue, food, gameInterval, mode;
+    let gridCount, box, snake1, dir1, p1Queue, snake2, dir2, p2Queue, food, gameInterval, mode;
 
-    function ladda(src) {
-        const img = new Image();
-        img.src = src;
-        return img;
-    }
+    function ladda(src) { const img = new Image(); img.src = src; return img; }
 
-    // Koden letar efter P1 och P2
     const gfx = {
-        p1: {
-            body: ladda("p1-kropp.png"),
-            tailBiten: ladda("p1-svans-biten.png"),
-            tailHel: ladda("p1-svans-obiten.png"),
-            hHead: ladda("p1-huvud-fram.png"),
-            hUp: ladda("p1-huvud-upp.png"),
-            hDown: ladda("p1-huvud-ner.png")
-        },
-        p2: {
-            body: ladda("p2-kropp.png"),
-            tailBiten: ladda("p2-svans-biten.png"),
-            tailHel: ladda("p2-svans-obiten.png"),
-            hHead: ladda("p2-huvud-fram.png"),
-            hUp: ladda("p2-huvud-upp.png"),
-            hDown: ladda("p2-huvud-ner.png")
-        }
+        p1: { body: ladda("p1-kropp.png"), tailB: ladda("p1-svans-biten.png"), tailH: ladda("p1-svans-obiten.png"), hF: ladda("p1-huvud-fram.png"), hU: ladda("p1-huvud-upp.png"), hD: ladda("p1-huvud-ner.png") },
+        p2: { body: ladda("p2-kropp.png"), tailB: ladda("p2-svans-biten.png"), tailH: ladda("p2-svans-obiten.png"), hF: ladda("p2-huvud-fram.png"), hU: ladda("p2-huvud-upp.png"), hD: ladda("p2-huvud-ner.png") }
     };
 
     function startGame(m) {
         mode = m;
-        gridCount = parseInt(document.getElementById("gridInput").value) || 20;
-        canvas.width = canvas.height = gridCount * box;
-        document.getElementById("menu").classList.add("hidden");
+        gridCount = parseInt(document.getElementById("gridInput").value) || 15;
         
+        // DYNAMISK SKALNING: Gör kamelerna så stora som möjligt på skärmen
+        const screenPadding = 20;
+        const availableWidth = window.innerWidth - screenPadding;
+        const availableHeight = window.innerHeight * 0.45; // Använd 45% av höjden för banan
+        const size = Math.min(availableWidth, availableHeight);
+        
+        canvas.width = canvas.height = Math.floor(size / gridCount) * gridCount;
+        box = canvas.width / gridCount; // Här räknas storleken på varje kamel ut!
+
+        document.getElementById("menu").classList.add("hidden");
+        if(mode === 'multi') document.getElementById("p2Pad").classList.remove("hidden");
+
         snake1 = [{x: 2*box, y: 2*box}];
         dir1 = "RIGHT"; p1Queue = [];
-        
-        if(mode === 'multi') {
-            snake2 = [{x: (gridCount-3)*box, y: (gridCount-3)*box}];
-            dir2 = "LEFT"; p2Queue = [];
-            document.getElementById("p2Pad").classList.remove("hidden");
-        }
+        if(mode === 'multi') { snake2 = [{x: (gridCount-3)*box, y: (gridCount-3)*box}]; dir2 = "LEFT"; p2Queue = []; }
 
         spawnFood();
-        const speed = 250 - (document.getElementById("speedSlider").value * 2);
+        const speed = 300 - (document.getElementById("speedSlider").value * 2.5);
         gameInterval = setInterval(draw, speed);
     }
 
@@ -165,10 +168,13 @@
     }
 
     function draw() {
-        updateGame();
-        ctx.fillStyle = "#2e7d32";
+        updateLogic();
+        ctx.fillStyle = "#4caf50";
         ctx.fillRect(0,0, canvas.width, canvas.height);
-        ctx.fillText("🍎", food.x, food.y + 10);
+        
+        // Mat
+        ctx.font = box + "px Arial";
+        ctx.fillText("🍎", food.x, food.y + box * 0.85);
 
         renderSnake(snake1, dir1, gfx.p1, p1Queue);
         if(mode === 'multi') renderSnake(snake2, dir2, gfx.p2, p2Queue);
@@ -178,72 +184,60 @@
         for(let i = 0; i < snake.length; i++) {
             let seg = snake[i];
             let moveDir = currentDir;
-
             if (i > 0) {
                 let front = snake[i-1];
-                if (front.x > seg.x) moveDir = "RIGHT";
-                else if (front.x < seg.x) moveDir = "LEFT";
-                else if (front.y > seg.y) moveDir = "DOWN";
-                else if (front.y < seg.y) moveDir = "UP";
+                if (front.x > seg.x) moveDir = "RIGHT"; else if (front.x < seg.x) moveDir = "LEFT";
+                else if (front.y > seg.y) moveDir = "DOWN"; else if (front.y < seg.y) moveDir = "UP";
             }
 
             ctx.save();
             ctx.translate(seg.x + box/2, seg.y + box/2);
-
             if (moveDir === "LEFT") ctx.scale(-1, 1);
             else if (moveDir === "UP") ctx.rotate(-Math.PI/2);
             else if (moveDir === "DOWN") ctx.rotate(Math.PI/2);
 
-            // Rita delarna (Lagersystemet)
-            drawImg(pGfx.body);
-            drawImg(i === snake.length - 1 ? pGfx.tailHel : pGfx.tailBiten);
+            // Rita lager
+            if(pGfx.body.complete) ctx.drawImage(pGfx.body, -box/2, -box/2, box, box);
+            let tail = (i === snake.length - 1) ? pGfx.tailH : pGfx.tailB;
+            if(tail.complete) ctx.drawImage(tail, -box/2, -box/2, box, box);
 
-            let headImg = pGfx.hHead;
+            let h = pGfx.hF;
             if (i === 0 && queue.length > 0) {
-                if(queue[0] === "UP") headImg = pGfx.hUp;
-                if(queue[0] === "DOWN") headImg = pGfx.hDown;
+                if(queue[0] === "UP") h = pGfx.hU; else if(queue[0] === "DOWN") h = pGfx.hD;
             }
-            drawImg(headImg);
+            if(h.complete) ctx.drawImage(h, -box/2, -box/2, box, box);
 
             ctx.restore();
         }
     }
 
-    function drawImg(img) { if(img.complete) ctx.drawImage(img, -box/2, -box/2, box, box); }
-
-    function updateGame() {
-        // Uppdatera P1
+    function updateLogic() {
         if(p1Queue.length > 0) {
             let n = p1Queue.shift();
-            if(n==="UP" && dir1!=="DOWN") dir1=n; if(n==="DOWN" && dir1!=="UP") dir1=n;
-            if(n==="LEFT" && dir1!=="RIGHT") dir1=n; if(n==="RIGHT" && dir1!=="LEFT") dir1=n;
+            if(n==="UP"&&dir1!=="DOWN" || n==="DOWN"&&dir1!=="UP" || n==="LEFT"&&dir1!=="RIGHT" || n==="RIGHT"&&dir1!=="LEFT") dir1=n;
         }
         move(snake1, dir1, 1);
 
-        // Uppdatera P2
         if(mode === 'multi') {
             if(p2Queue.length > 0) {
                 let n = p2Queue.shift();
-                if(n==="UP" && dir2!=="DOWN") dir2=n; if(n==="DOWN" && dir2!=="UP") dir2=n;
-                if(n==="LEFT" && dir2!=="RIGHT") dir2=n; if(n==="RIGHT" && dir2!=="LEFT") dir2=n;
+                if(n==="UP"&&dir2!=="DOWN" || n==="DOWN"&&dir2!=="UP" || n==="LEFT"&&dir2!=="RIGHT" || n==="RIGHT"&&dir2!=="LEFT") dir2=n;
             }
             move(snake2, dir2, 2);
         }
     }
 
     function move(s, d, pNum) {
-        let head = {...s[0]};
-        if(d === "UP") head.y -= box; if(d === "DOWN") head.y += box;
-        if(d === "LEFT") head.x -= box; if(d === "RIGHT") head.x += box;
+        let head = {x: Math.round(s[0].x), y: Math.round(s[0].y)};
+        if(d === "UP") head.y -= box; else if(d === "DOWN") head.y += box;
+        else if(d === "LEFT") head.x -= box; else if(d === "RIGHT") head.x += box;
 
-        // Vägg- och krockkoll
-        if(head.x < 0 || head.x >= canvas.width || head.y < 0 || head.y >= canvas.height || 
-           s.some(seg => seg.x === head.x && seg.y === head.y)) {
+        if(head.x < 0 || head.x >= canvas.width || head.y < 0 || head.y >= canvas.height || s.some(seg => Math.round(seg.x) === head.x && Math.round(seg.y) === head.y)) {
             die(pNum === 1 ? "P2 VANN!" : "P1 VANN!");
         }
 
         s.unshift(head);
-        if(head.x === food.x && head.y === food.y) spawnFood();
+        if(Math.abs(head.x - food.x) < 1 && Math.abs(head.y - food.y) < 1) spawnFood();
         else s.pop();
     }
 
