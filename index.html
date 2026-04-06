@@ -3,172 +3,174 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
-    <title>Kamelkaravanen Fixad</title>
+    <title>Kamelkaravanen PWA</title>
+    <link rel="manifest" href="manifest.json">
     <style>
+        :root {
+            --p1-color: #2196f3;
+            --p2-color: #f44336;
+            --btn-bg: #444;
+            --shadow: #222;
+        }
+
         body, html {
-            margin: 0; padding: 0; background: #1a1a1a; color: white;
-            display: flex; flex-direction: column; align-items: center;
-            height: 100vh; overflow: hidden; font-family: sans-serif;
+            margin: 0; padding: 0; height: 100vh;
+            background-color: #1a1a1a; color: white;
+            font-family: sans-serif; overflow: hidden;
+            display: flex; flex-direction: column;
         }
 
-        #menu {
-            position: absolute; top: 10%; z-index: 100; background: #2c3e50;
-            padding: 20px; border-radius: 15px; width: 80%; max-width: 300px;
-            text-align: center; border: 2px solid #444;
+        /* MENY LÄNGST UPP */
+        .header-menu {
+            height: 15vh; display: flex; flex-direction: column;
+            align-items: center; justify-content: center; gap: 5px;
+            background: #2c3e50; border-bottom: 2px solid #444;
         }
 
-        #canvasContainer {
-            width: 95vw; max-width: 500px; aspect-ratio: 1/1;
-            margin-top: 10px; border: 4px solid #333; background: #4caf50;
+        /* SPELOMRÅDET I MITTEN */
+        .game-container {
+            flex: 1; display: flex; align-items: center; justify-content: center;
+            position: relative; width: 100%;
+        }
+
+        #canvasWrapper {
+            width: 70vw; max-width: 500px; aspect-ratio: 1/1;
+            border: 4px solid #333; background: #4caf50;
         }
 
         canvas { width: 100%; height: 100%; display: block; image-rendering: pixelated; }
 
-        .controls-container {
-            display: flex; justify-content: space-around; width: 100%;
-            margin-top: auto; padding-bottom: 20px; background: #111;
+        /* KNAPPAR PÅ VARSIN SIDA */
+        .side-controls {
+            position: absolute; width: 100%; height: 100%;
+            display: flex; justify-content: space-between; align-items: center;
+            pointer-events: none; padding: 0 10px; box-sizing: border-box;
         }
 
-        .d-pad { display: grid; grid-template-columns: repeat(3, 65px); grid-template-rows: repeat(2, 65px); gap: 10px; }
-        .btn { background: #444; color: white; border: none; border-radius: 15px; font-size: 1.5rem; box-shadow: 0 4px 0 #222; }
-        .btn:active { transform: translateY(2px); box-shadow: none; }
-        .up { grid-column: 2; } .left { grid-column: 1; grid-row: 2; } .down { grid-column: 2; grid-row: 2; } .right { grid-column: 3; grid-row: 2; }
+        .d-pad {
+            display: grid; grid-template-columns: repeat(3, 50px);
+            grid-template-rows: repeat(2, 50px); gap: 8px;
+            pointer-events: auto;
+        }
+
+        .btn {
+            background: var(--btn-bg); color: white; border: none; border-radius: 12px;
+            font-size: 1.2rem; display: flex; align-items: center; justify-content: center;
+            box-shadow: 0 5px 0 var(--shadow); transition: 0.1s;
+        }
+        .btn:active { transform: translateY(3px); box-shadow: 0 2px 0 #000; }
+        .p1-btn { border-bottom: 3px solid var(--p1-color); }
+        .p2-btn { border-bottom: 3px solid var(--p2-color); }
+
+        .up { grid-column: 2; } .left { grid-column: 1; grid-row: 2; }
+        .down { grid-column: 2; grid-row: 2; } .right { grid-column: 3; grid-row: 2; }
 
         .hidden { display: none !important; }
+        
+        input[type="range"] { width: 150px; }
     </style>
 </head>
 <body>
 
-<div id="menu">
-    <h2>Inställningar</h2>
-    <p>Bredd (5-100): <input type="number" id="gridInput" value="15" style="width:50px;"></p>
-    <p>Fart: <input type="range" id="speedSlider" min="1" max="100" value="60"></p>
-    <button onclick="startGame()" style="padding:10px 20px; font-weight:bold;">STARTA SPEL</button>
+<div class="header-menu" id="menu">
+    <div style="display:flex; gap:20px;">
+        <label>Bredd: <input type="number" id="gridInput" value="15" style="width:40px;"></label>
+        <label>Fart: <input type="range" id="speedSlider" min="1" max="100" value="50"></label>
+    </div>
+    <button onclick="startGame()" style="padding:8px 20px; background:#f4d03f; border:none; border-radius:5px; font-weight:bold;">STARTA</button>
 </div>
 
-<div id="canvasContainer">
-    <canvas id="gameCanvas"></canvas>
-</div>
+<div class="game-container">
+    <div id="canvasWrapper">
+        <canvas id="gameCanvas"></canvas>
+    </div>
 
-<div class="controls-container">
-    <div class="d-pad">
-        <button class="btn up" onpointerdown="changeDir('UP')">▲</button>
-        <button class="btn left" onpointerdown="changeDir('LEFT')">◀</button>
-        <button class="btn down" onpointerdown="changeDir('DOWN')">▼</button>
-        <button class="btn right" onpointerdown="changeDir('RIGHT')">▶</button>
+    <div class="side-controls">
+        <div class="d-pad">
+            <button class="btn p1-btn up" onpointerdown="changeDir(1,'UP')">▲</button>
+            <button class="btn p1-btn left" onpointerdown="changeDir(1,'LEFT')">◀</button>
+            <button class="btn p1-btn down" onpointerdown="changeDir(1,'DOWN')">▼</button>
+            <button class="btn p1-btn right" onpointerdown="changeDir(1,'RIGHT')">▶</button>
+        </div>
+        <div id="p2Pad" class="d-pad hidden">
+            <button class="btn p2-btn up" onpointerdown="changeDir(2,'UP')">W</button>
+            <button class="btn p2-btn left" onpointerdown="changeDir(2,'LEFT')">A</button>
+            <button class="btn p2-btn down" onpointerdown="changeDir(2,'DOWN')">S</button>
+            <button class="btn p2-btn right" onpointerdown="changeDir(2,'RIGHT')">D</button>
+        </div>
     </div>
 </div>
 
 <script>
     const canvas = document.getElementById("gameCanvas");
     const ctx = canvas.getContext("2d");
-    
-    let box, gridCount, snake, dir, nextDir, food, gameInterval;
+    let box, gridCount, snake1, dir1, nextDir1, food, gameInterval;
 
-    const gfx = {
-        body: new Image(), tail: new Image(), head: new Image()
-    };
-    // Här kan du sätta dina GitHub-länkar sen
-    gfx.body.src = "p1-kropp.png"; 
-    gfx.tail.src = "p1-svans-obiten.png";
-    gfx.head.src = "p1-huvud-fram.png";
+    // Ladda bilder
+    const gfx = { body: new Image(), head: new Image(), tail: new Image() };
+    gfx.body.src = "p1-kropp.png"; gfx.head.src = "p1-huvud-fram.png"; gfx.tail.src = "p1-svans-obiten.png";
 
     function startGame() {
         gridCount = parseInt(document.getElementById("gridInput").value) || 15;
-        
-        // VIKTIGT: Vi sätter canvasens inre storlek till något stort (t.ex 600px)
-        // och räknar ut rutorna baserat på det.
-        canvas.width = 600;
-        canvas.height = 600;
+        // Fixa suddigheten: Vi sätter en fast hög upplösning
+        canvas.width = 600; canvas.height = 600;
         box = canvas.width / gridCount;
 
-        snake = [{x: Math.floor(gridCount/2), y: Math.floor(gridCount/2)}];
-        dir = "RIGHT";
-        nextDir = "RIGHT";
-        
-        document.getElementById("menu").classList.add("hidden");
+        snake1 = [{x: 2, y: 2}];
+        dir1 = nextDir1 = "RIGHT";
         spawnFood();
         
+        // Fixa hastighets-slidern
+        const speedVal = document.getElementById("speedSlider").value;
+        const tickRate = 350 - (speedVal * 3); 
+
         if(gameInterval) clearInterval(gameInterval);
-        const speed = 300 - (document.getElementById("speedSlider").value * 2.5);
-        gameInterval = setInterval(gameLoop, speed);
+        gameInterval = setInterval(gameLoop, tickRate);
+        document.getElementById("menu").style.opacity = "0.5";
     }
 
     function spawnFood() {
-        food = {
-            x: Math.floor(Math.random() * gridCount),
-            y: Math.floor(Math.random() * gridCount)
-        };
+        food = { x: Math.floor(Math.random()*gridCount), y: Math.floor(Math.random()*gridCount) };
     }
 
-    function changeDir(d) {
-        if(d === "UP" && dir !== "DOWN") nextDir = "UP";
-        if(d === "DOWN" && dir !== "UP") nextDir = "DOWN";
-        if(d === "LEFT" && dir !== "RIGHT") nextDir = "LEFT";
-        if(d === "RIGHT" && dir !== "LEFT") nextDir = "RIGHT";
+    function changeDir(p, d) {
+        if(p === 1) nextDir1 = d;
     }
 
     function gameLoop() {
-        dir = nextDir;
-        let head = {x: snake[0].x, y: snake[0].y};
+        dir1 = nextDir1;
+        let head = {...snake1[0]};
+        if(dir1 === "UP") head.y--; if(dir1 === "DOWN") head.y++;
+        if(dir1 === "LEFT") head.x--; if(dir1 === "RIGHT") head.x++;
 
-        if(dir === "UP") head.y--;
-        if(dir === "DOWN") head.y++;
-        if(dir === "LEFT") head.x--;
-        if(dir === "RIGHT") head.x++;
-
-        // Krock-koll
-        if(head.x < 0 || head.x >= gridCount || head.y < 0 || head.y >= gridCount || 
-           snake.some(s => s.x === head.x && s.y === head.y)) {
-            alert("KROCK!");
-            location.reload();
-            return;
+        // Krock
+        if(head.x < 0 || head.x >= gridCount || head.y < 0 || head.y >= gridCount) {
+            clearInterval(gameInterval); alert("KROCK!"); return;
         }
 
-        snake.unshift(head);
-
-        if(head.x === food.x && head.y === food.y) {
-            spawnFood();
-        } else {
-            snake.pop();
-        }
-
+        snake1.unshift(head);
+        if(head.x === food.x && head.y === food.y) spawnFood(); else snake1.pop();
         draw();
     }
 
     function draw() {
-        // Sudda allt
         ctx.fillStyle = "#4caf50";
-        ctx.fillRect(0, 0, canvas.width, canvas.height);
+        ctx.fillRect(0,0, canvas.width, canvas.height);
 
-        // Rita mat
-        ctx.font = (box*0.8) + "px Arial";
-        ctx.fillText("🍎", food.x * box, (food.y + 0.8) * box);
+        // Äpplet
+        ctx.font = box + "px Arial";
+        ctx.fillText("🍎", food.x * box, (food.y + 0.85) * box);
 
-        // Rita kameler
-        snake.forEach((seg, i) => {
+        // Kamelerna (Ingen diagonal glidning här!)
+        snake1.forEach((seg, i) => {
             ctx.save();
-            // Flytta till rutans mitt
             ctx.translate(seg.x * box + box/2, seg.y * box + box/2);
             
-            // Enkel rotation för test
-            if(dir === "LEFT") ctx.scale(-1, 1);
-            if(dir === "UP") ctx.rotate(-Math.PI/2);
-            if(dir === "DOWN") ctx.rotate(Math.PI/2);
-
-            // Rita bilderna (med 1 pixel överlapp för att slippa glipor)
-            const s = box + 1;
-            
+            // Rita bilden lite större (box + 2) för att täcka glipor
+            const s = box + 2; 
             if(gfx.body.complete) ctx.drawImage(gfx.body, -s/2, -s/2, s, s);
-            else {
-                // Fallback om bilderna saknas (så du ser att det funkar)
-                ctx.fillStyle = "brown";
-                ctx.fillRect(-s/2, -s/2, s, s);
-            }
-
-            if(i === 0 && gfx.head.complete) ctx.drawImage(gfx.head, -s/2, -s/2, s, s);
-            if(i === snake.length -1 && gfx.tail.complete) ctx.drawImage(gfx.tail, -s/2, -s/2, s, s);
-
+            else { ctx.fillStyle = "brown"; ctx.fillRect(-s/2, -s/2, s, s); }
+            
             ctx.restore();
         });
     }
