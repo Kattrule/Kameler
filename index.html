@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
-    <title>Kameljakt</title>
+    <title>Kamelkaravanen Pro</title>
     <link rel="manifest" href="manifest.json">
     <style>
         :root {
@@ -53,7 +53,7 @@
 
         canvas { 
             width: 100%; height: 100%; display: block; 
-            image-rendering: pixelated; /* GÖR 12x12 BILDER SKARPA */
+            image-rendering: pixelated; /* GÖR BILDER SKARPA */
         }
 
         /* MOBILKNAPPAR */
@@ -127,16 +127,15 @@
     let box = 40; // Fast matematisk storlek per ruta! Löser glipor.
     let gridCount, snake1, dir1, nextDir1, snake2, dir2, nextDir2, food, gameInterval, mode;
 
-    const gfx1 = { b: new Image(), h: new Image(), t: new Image(), hu: new Image(), hd: new Image(), tb: new Image() };
-    const gfx2 = { b: new Image(), h: new Image(), t: new Image(), hu: new Image(), hd: new Image(), tb: new Image() };
+    const gfx1 = { b: new Image(), h: new Image(), t: new Image(), hu: new Image(), hd: new Image() };
+    const gfx2 = { b: new Image(), h: new Image(), t: new Image(), hu: new Image(), hd: new Image() };
 
     gfx1.b.src = "p1-kropp.png"; gfx1.h.src = "p1-huvud-fram.png"; gfx1.t.src = "p1-svans-obiten.png";
-    gfx1.hu.src = "p1-huvud-upp.png"; gfx1.hd.src = "p1-huvud-ner.png"; gfx1.tb.src = "p1-svans-biten.png";
+    gfx1.hu.src = "p1-huvud-upp.png"; gfx1.hd.src = "p1-huvud-ner.png"; 
     
     gfx2.b.src = "p2-kropp.png"; gfx2.h.src = "p2-huvud-fram.png"; gfx2.t.src = "p2-svans-obiten.png";
-    gfx2.hu.src = "p2-huvud-upp.png"; gfx2.hd.src = "p2-huvud-ner.png"; gfx2.tb.src = "p2-svans-biten.png";
+    gfx2.hu.src = "p2-huvud-upp.png"; gfx2.hd.src = "p2-huvud-ner.png"; 
 
-    // Uppdatera hastighet live när man drar i reglaget
     document.getElementById("speedSlider").addEventListener("input", function() {
         if(gameInterval) {
             clearInterval(gameInterval);
@@ -149,7 +148,6 @@
         mode = m;
         gridCount = parseInt(document.getElementById("gridInput").value) || 15;
         
-        // Den inre Canvasen är nu alltid perfekt synkad till griden
         canvas.width = gridCount * box;
         canvas.height = gridCount * box;
 
@@ -178,7 +176,6 @@
         if(p === 2) { if(d==="UP"&&dir2!=="DOWN" || d==="DOWN"&&dir2!=="UP" || d==="LEFT"&&dir2!=="RIGHT" || d==="RIGHT"&&dir2!=="LEFT") nextDir2 = d; }
     }
 
-    // Tangentbord-stöd för dator
     window.addEventListener("keydown", e => {
         if(["ArrowUp","ArrowDown","ArrowLeft","ArrowRight","w","a","s","d"].includes(e.key)) e.preventDefault();
         if(e.key === "ArrowUp") changeDir(1, "UP");
@@ -230,16 +227,13 @@
             
             let moveDir = currentDir;
             
-            // NY ROTATIONS-LOGIK: Delarna behåller vinkeln från den BAKOM sig
             if(i === 0) {
                 moveDir = currentDir;
             } else if (i < snake.length - 1) {
-                // Kroppen tittar på delen bakom
                 let back = snake[i+1];
                 if(seg.x > back.x) moveDir = "RIGHT"; else if(seg.x < back.x) moveDir = "LEFT";
                 else if(seg.y > back.y) moveDir = "DOWN"; else if(seg.y < back.y) moveDir = "UP";
             } else {
-                // Sista svansen tittar på delen framför (den har ingen bakom)
                 let front = snake[i-1];
                 if(front.x > seg.x) moveDir = "RIGHT"; else if(front.x < seg.x) moveDir = "LEFT";
                 else if(front.y > seg.y) moveDir = "DOWN"; else if(front.y < seg.y) moveDir = "UP";
@@ -249,20 +243,22 @@
             else if(moveDir === "UP") ctx.rotate(-Math.PI/2);
             else if(moveDir === "DOWN") ctx.rotate(Math.PI/2);
 
-            // Lägger till 0.5 på rutan för att tvinga överlappning och noll glipor
             const s = box + 0.5; 
             
-            if(g.b.complete) ctx.drawImage(g.b, -s/2, -s/2, s, s);
-            
-            let tImg = (i === snake.length-1) ? g.t : g.tb;
-            if(tImg.complete) ctx.drawImage(tImg, -s/2, -s/2, s, s);
-            
-            let hImg = g.h;
-            if(i === 0) {
-                if(currentDir === "UP") hImg = g.hu;
-                else if(currentDir === "DOWN") hImg = g.hd;
+            // HÄR ÄR FIXEN: Vi kollar VILKEN del det är innan vi ritar den
+            if (i === 0) {
+                // Ritar ENBART huvudet
+                let hImg = currentDir === "UP" ? g.hu : (currentDir === "DOWN" ? g.hd : g.h);
+                if(hImg.complete) ctx.drawImage(hImg, -s/2, -s/2, s, s);
+            } 
+            else if (i === snake.length - 1) {
+                // Ritar ENBART svansen
+                if(g.t.complete) ctx.drawImage(g.t, -s/2, -s/2, s, s);
+            } 
+            else {
+                // Ritar ENBART kroppen
+                if(g.b.complete) ctx.drawImage(g.b, -s/2, -s/2, s, s);
             }
-            if(hImg.complete) ctx.drawImage(hImg, -s/2, -s/2, s, s);
 
             ctx.restore();
         });
